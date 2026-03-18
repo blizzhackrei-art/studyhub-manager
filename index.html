@@ -13,6 +13,28 @@
 <title>StudyHub Manager</title>
 <style>
 
+/* Sync Status */
+#sync-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: var(--surface2);
+  font-size: 12px;
+}
+
+.sync-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.sync-dot.connected { background: #00c896; }
+.sync-dot.offline { background: var(--text3); }
+.sync-dot.error { background: var(--red); }
+
+
 /* Report Tables */
 .report-table {
   width: 100%;
@@ -2003,231 +2025,88 @@ function renderPrinterStatus(){
 }
 
 // ─── Printer Screen ────────────────────────────────────────────────────────────
-function renderPrinterScreen(){
+function renderPrinterScreen() {
   const el = document.getElementById('printer-content');
   const connected = window.printer?.isConnected;
+  
   el.innerHTML = `
-    <!-- Status Bar -->
-    <div class="printer-status-bar" id="pr-statusbar"></div>
-
-    <!-- Paper Width -->
-    <div class="sec-heading">Paper Width</div>
-    <div class="paper-toggle" style="margin-bottom:14px;">
-      <button class="paper-btn ${printerSettings.paperWidth===58?'active':''}" onclick="setPaperWidth(58)">58mm (32 chars)</button>
-      <button class="paper-btn ${printerSettings.paperWidth===80?'active':''}" onclick="setPaperWidth(80)">80mm (48 chars)</button>
-    </div>
-
-    <div class="sec-heading">Platform Selection</div>
-<div class="paper-toggle" style="margin-bottom:14px;">
-  <button class="paper-btn ${printerSettings.platform==='android'?'active':''}" 
-          onclick="setPrinterPlatform('android')">📱 Android</button>
-  <button class="paper-btn ${printerSettings.platform==='windows'?'active':''}" 
-          onclick="setPrinterPlatform('windows')">🖥️ Windows</button>
-</div>
-
-    <!-- Connection Method -->
-    <div class="sec-heading">Connection Method</div>
-    <div class="conn-method-grid">
-        ${getConnectionMethods().map(method => `
-        <div class="conn-method-btn ${printerSettings.connMethod===method?'selected':''}" 
-        onclick="setConnMethod('${method}')">
-        <span class="cm-icon">${method==='usb'?'🔌':method==='bluetooth'?'📶':'🌐'}</span>
-        <span class="cm-label">${method.toUpperCase()}</span>
-        <span class="cm-sub">${method==='usb'?'Direct Cable':method==='bluetooth'?'Wireless':'Network'}</span>
-    </div>
-  `).join('')}
-</div>
-      <div class="conn-method-btn ${printerSettings.connMethod==='bluetooth'?'selected':''}" onclick="setConnMethod('bluetooth')">
-        <span class="cm-icon">📶</span>
-        <span class="cm-label">Bluetooth</span>
-        <span class="cm-sub">BLE / Classic</span>
+    <div class="printer-status-bar" id="pr-statusbar">
+      <div class="printer-dot ${connected?'connected':'disconnected'}"></div>
+      <div style="flex:1;">
+        <div class="printer-status-text">${connected?'Connected':'Not Connected'}</div>
+        <div class="printer-status-sub">${connected?window.printer.printerName:'Select platform below'}</div>
       </div>
-      <div class="conn-method-btn ${printerSettings.connMethod==='lan'?'selected':''}" onclick="setConnMethod('lan')">
-        <span class="cm-icon">🌐</span>
-        <span class="cm-label">LAN / WiFi</span>
-        <span class="cm-sub">TCP Port 9100</span>
-      </div>
+      ${connected?`<button class="btn btn-danger btn-sm" onclick="printerDisconnect()">Disconnect</button>`:''}
     </div>
 
-    <!-- LAN Config (only shown when LAN selected) -->
-    ${printerSettings.connMethod==='lan'?`
-      <div class="card" style="padding:14px;margin-bottom:14px;">
-        <div style="font-size:12px;color:var(--warn);margin-bottom:10px;">⚠️ LAN requires the <b>ws-bridge.js</b> script running on a PC on the same network.</div>
+    <div class="sec-heading">Platform Settings</div>
+    <div class="card" style="padding:16px;margin-bottom:16px;">
+      <div class="form-group">
+        <label class="form-label">Select Platform</label>
+        <select class="form-select" id="pr-platform" onchange="savePrinterPlatform()">
+          <option value="android" ${printerSettings.platform === 'android' ? 'selected' : ''}>📱 Android</option>
+          <option value="windows" ${printerSettings.platform === 'windows' ? 'selected' : ''}>🖥️ Windows</option>
+        </select>
+      </div>
+
+      ${printerSettings.platform === 'windows' ? `
         <div class="form-group">
           <label class="form-label">Printer IP Address</label>
-          <input class="form-input" id="lan-ip" value="${printerSettings.lanIp}" placeholder="e.g. 192.168.1.100"/>
+          <input class="form-input" id="pr-ip" value="${printerSettings.lanIp}" placeholder="192.168.1.100">
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Printer Port</label>
-            <input class="form-input" id="lan-port" type="number" value="${printerSettings.lanPort}"/>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Bridge Port</label>
-            <input class="form-input" id="lan-bridge-port" type="number" value="${printerSettings.laBridgePort}"/>
-          </div>
-        </div>
-        <button class="btn btn-secondary btn-full" onclick="saveLanConfig()">Save LAN Config</button>
-      </div>
-    `:''}
-
-    <!-- USB note -->
-    ${printerSettings.connMethod==='usb'?`
-      <div class="card" style="padding:12px 14px;margin-bottom:14px;font-size:12px;color:var(--text2);">
-        📱 Connect your thermal printer to your Android device using a <b>USB OTG adapter/cable</b>. Then tap Connect below. Chrome will show a device picker.
-      </div>
-    `:''}
-
-    <!-- BT note -->
-    ${printerSettings.connMethod==='bluetooth'?`
-      <div class="card" style="padding:12px 14px;margin-bottom:14px;font-size:12px;color:var(--text2);">
-        📶 Make sure your Bluetooth printer is <b>powered on and in pairing mode</b>. Tap Connect below — Chrome will scan for nearby devices. Works with most 58mm/80mm BLE printers.
-      </div>
-    `:''}
-
-    <!-- Connect Button -->
-    ${!connected?`
-      <button class="btn btn-primary btn-full" style="margin-bottom:14px;" onclick="printerConnect()">
-        ${printerSettings.connMethod==='usb'?'🔌 Connect via USB':printerSettings.connMethod==='bluetooth'?'📶 Connect via Bluetooth':'🌐 Connect via LAN'}
-      </button>
-    `:`
-      <div class="print-btn-bar" style="margin-bottom:14px;">
-        <button class="btn btn-secondary" style="flex:1;" onclick="printerTestPrint()">🖨️ Test Print</button>
-        <button class="btn btn-danger" onclick="printerDisconnect()">Disconnect</button>
-      </div>
-    `}
-
-    <!-- Receipt Settings -->
-    <div class="sec-heading">Receipt Settings</div>
-    <div class="card" style="padding:14px;margin-bottom:14px;">
-      <div class="form-group">
-        <label class="form-label">Shop Name</label>
-        <input class="form-input" id="pr-shop-name" value="${printerSettings.shopName}" placeholder="StudyHub"/>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Tagline</label>
-        <input class="form-input" id="pr-tagline" value="${printerSettings.shopTagline}" placeholder="Co-working & Study Space"/>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Address</label>
-        <input class="form-input" id="pr-address" value="${printerSettings.shopAddress}" placeholder="e.g. 123 Rizal St, Manila"/>
-      </div>
-      <div class="form-row">
+      ` : `
         <div class="form-group">
-          <label class="form-label">Phone</label>
-          <input class="form-input" id="pr-phone" value="${printerSettings.shopPhone}" placeholder="+63 9XX XXX XXXX"/>
+          <label class="form-label">Connection Type</label>
+          <select class="form-select" id="pr-connection" onchange="savePrinterConnection()">
+            <option value="usb" ${printerSettings.connMethod === 'usb' ? 'selected' : ''}>🔌 USB</option>
+            <option value="bluetooth" ${printerSettings.connMethod === 'bluetooth' ? 'selected' : ''}>📶 Bluetooth</option>
+          </select>
         </div>
-        <div class="form-group">
-          <label class="form-label">Default Cashier</label>
-          <input class="form-input" id="pr-cashier" value="${printerSettings.cashier}" placeholder="Staff"/>
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Footer Note</label>
-        <input class="form-input" id="pr-footer" value="${printerSettings.footerNote}" placeholder="Thank you!"/>
-      </div>
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-        <label class="form-label" style="margin:0;">Auto-print on checkout</label>
-        <div onclick="toggleAutoPrint()" style="cursor:pointer;width:42px;height:24px;border-radius:12px;background:${printerSettings.autoPrint?'var(--accent)':'var(--border)'};position:relative;transition:background 0.2s;">
-          <div style="position:absolute;top:3px;left:${printerSettings.autoPrint?'21px':'3px'};width:18px;height:18px;border-radius:50%;background:#fff;transition:left 0.2s;"></div>
-        </div>
-      </div>
-      <button class="btn btn-primary btn-full mt-12" onclick="saveReceiptSettings()">Save Receipt Settings</button>
+      `}
     </div>
 
-    <!-- Printer Log -->
-    <div class="sec-heading">Printer Log</div>
-    <div class="printer-log" id="pr-log"></div>
-    <div style="height:20px;"></div>
+    <div class="sec-heading">Printer Actions</div>
+    <div class="card" style="padding:16px;">
+      ${!connected ? `
+        <button class="btn btn-primary btn-full" onclick="printerConnect()">
+          ${printerSettings.platform === 'windows' ? '🌐 Connect to Network Printer' : '🔗 Connect to Device'}
+        </button>
+      ` : `
+        <div class="print-btn-bar">
+          <button class="btn btn-primary" style="flex:1;" onclick="printerTestPrint()">🖨️ Test Print</button>
+          <button class="btn btn-secondary" onclick="printerDisconnect()">Disconnect</button>
+        </div>
+      `}
+    </div>
+
+    <div class="sec-heading">Receipt Settings</div>
+    <div class="card" style="padding:16px;">
+      <div class="form-group">
+        <label class="form-label">Shop Name</label>
+        <input class="form-input" id="pr-shop" value="${printerSettings.shopName}">
+      </div>
+      <button class="btn btn-secondary btn-full" onclick="saveReceiptSettings()">💾 Save Settings</button>
+    </div>
   `;
-  renderPrinterStatus();
-  const logEl = document.getElementById('pr-log');
-  if(logEl) renderPrinterLog(logEl);
 }
 
-function setPaperWidth(mm){
-  printerSettings.paperWidth = mm;
-  savePrinterSettings();
-  if(window.printer) window.printer.setPaperWidth(mm);
-  renderPrinterScreen();
-}
-
-function setConnMethod(m){
-  printerSettings.connMethod = m;
+function savePrinterPlatform() {
+  printerSettings.platform = document.getElementById('pr-platform').value;
   savePrinterSettings();
   renderPrinterScreen();
 }
 
-function saveLanConfig(){
-  printerSettings.lanIp = document.getElementById('lan-ip')?.value?.trim() || '';
-  printerSettings.lanPort = parseInt(document.getElementById('lan-port')?.value) || 9100;
-  printerSettings.laBridgePort = parseInt(document.getElementById('lan-bridge-port')?.value) || 8765;
+function savePrinterConnection() {
+  printerSettings.connMethod = document.getElementById('pr-connection').value;
   savePrinterSettings();
-  addPrinterLog('LAN config saved', 'success');
 }
 
-function saveReceiptSettings(){
-  printerSettings.shopName = document.getElementById('pr-shop-name')?.value?.trim() || 'StudyHub';
-  printerSettings.shopTagline = document.getElementById('pr-tagline')?.value?.trim() || '';
-  printerSettings.shopAddress = document.getElementById('pr-address')?.value?.trim() || '';
-  printerSettings.shopPhone = document.getElementById('pr-phone')?.value?.trim() || '';
-  printerSettings.cashier = document.getElementById('pr-cashier')?.value?.trim() || 'Staff';
-  printerSettings.footerNote = document.getElementById('pr-footer')?.value?.trim() || '';
-  savePrinterSettings();
-  addPrinterLog('Receipt settings saved', 'success');
-  // Show small toast
-  const toast = document.createElement('div');
-  toast.textContent = '✅ Saved!';
-  toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--accent);color:#0f1923;padding:8px 20px;border-radius:20px;font-weight:800;font-size:13px;z-index:300;pointer-events:none;';
-  document.body.appendChild(toast);
-  setTimeout(()=>toast.remove(), 1800);
-}
-
-function toggleAutoPrint(){
-  printerSettings.autoPrint = !printerSettings.autoPrint;
-  savePrinterSettings();
-  renderPrinterScreen();
-}
-
-async function printerConnect(){
-  if(!window.printer){ addPrinterLog('Printer engine not loaded', 'error'); return; }
-  const btn = document.querySelector('.btn-primary');
-  if(btn){ btn.disabled=true; btn.textContent='Connecting…'; }
-  try {
-    const m = printerSettings.connMethod;
-    if(m==='usb'){
-      await window.printer.connectUSB();
-    } else if(m==='bluetooth'){
-      await window.printer.connectBluetooth();
-    } else if(m==='lan'){
-      saveLanConfig();
-      if(!printerSettings.lanIp){ addPrinterLog('Enter printer IP address first', 'error'); return; }
-      await window.printer.connectLAN(printerSettings.lanIp, printerSettings.lanPort, printerSettings.laBridgePort);
-    }
-    renderPrinterScreen();
-  } catch(e){
-    addPrinterLog('Connection failed: ' + e.message, 'error');
-    renderPrinterScreen();
+function saveReceiptSettings() {
+  printerSettings.shopName = document.getElementById('pr-shop').value;
+  if(printerSettings.platform === 'windows') {
+    printerSettings.lanIp = document.getElementById('pr-ip').value;
   }
-}
-
-async function printerDisconnect(){
-  if(!window.printer) return;
-  await window.printer.disconnect();
-  renderPrinterScreen();
-}
-
-async function printerTestPrint(){
-  if(!window.printer?.isConnected){
-    addPrinterLog('Not connected — go to Printer tab to connect', 'warn');
-    if(state.currentScreen !== 'printer') navigate('printer');
-    return;
-  }
-  try {
-    await window.printer.printTest();
-  } catch(e){
-    addPrinterLog('Print error: ' + e.message, 'error');
-  }
+  savePrinterSettings();
 }
 
 // ─── Print Receipt ─────────────────────────────────────────────────────────────

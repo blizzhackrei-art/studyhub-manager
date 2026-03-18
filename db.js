@@ -107,16 +107,30 @@ const FirebaseDB = (() => {
     setSyncStatus('local', 'Disconnected from Firebase');
   };
 
+// Update sync status in UI
+function updateSyncUI(status, message) {
+  const statusEl = document.getElementById('sync-status');
+  const dotEl = document.getElementById('sync-dot');
+  const textEl = document.getElementById('sync-text');
+  
+  if(!statusEl || !dotEl || !textEl) return;
+
+  statusEl.className = `sync-status ${status}`;
+  dotEl.className = `sync-dot ${status}`;
+  textEl.textContent = message;
+}
+
   // ── Sync status helper ──────────────────────────────────────────────────
   const setSyncStatus = (status, msg) => {
     _syncStatus = status;
-    if (_onSyncChange) _onSyncChange(status, msg);
-  };
+    updateSyncUI(status, msg);
+    if(_onSyncChange) _onSyncChange(status, msg);
+};
 
   // ── CRUD Operations ─────────────────────────────────────────────────────
 
   // Upsert a document
-  const set = async (collection, id, data) => {
+  async function set(collection, id, data) {
     // Always write to localStorage first (instant, offline-safe)
     const all = LS.get('sh_' + collection, []);
     const idx = all.findIndex(d => d.id === id);
@@ -132,7 +146,7 @@ const FirebaseDB = (() => {
         console.warn('Firestore set failed (will sync when online):', e.message);
       }
     }
-  };
+  }
 
   // Delete a document
   const remove = async (collection, id) => {
@@ -251,3 +265,7 @@ function getCurrentUser() {
 function saveCurrentUser(user) {
     localStorage.setItem('sh_currentUser', JSON.stringify(user));
 }
+
+// Add these event listeners at the end of db.js
+window.addEventListener('online', () => FirebaseDB.reconnect());
+window.addEventListener('offline', () => setSyncStatus('offline', 'Working offline'));
