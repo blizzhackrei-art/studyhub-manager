@@ -1,0 +1,2354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="theme-color" content="#0f1923"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="StudyHub"/>
+<link rel="manifest" href="manifest.json"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<title>StudyHub Manager</title>
+<style>
+
+/* Report Tables */
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--surface);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.report-table th {
+  padding: 12px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text2);
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.report-table td {
+  padding: 12px;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border);
+}
+
+.report-table tr:last-child td {
+  border-bottom: none;
+}
+
+.report-table .total-row {
+  background: var(--accent-dim);
+  font-weight: 800;
+}
+
+.report-table .total-row td {
+  color: var(--accent);
+}
+
+/* Filter Controls */
+.filter-controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.filter-select {
+  padding: 10px 14px;
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 14px;
+  min-width: 150px;
+}
+
+.filter-select:focus {
+  border-color: var(--accent);
+}
+
+/* Export Button */
+.export-btn {
+  background: linear-gradient(135deg, var(--accent3), var(--accent));
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.export-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Summary Cards */
+.summary-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.summary-card h3 {
+  font-size: 14px;
+  color: var(--text2);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.summary-item:last-child {
+  border-bottom: none;
+}
+
+.summary-label {
+  font-size: 13px;
+  color: var(--text2);
+}
+
+.summary-value {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text);
+  font-family: var(--mono);
+}
+
+/* Discount Badge */
+.discount-badge {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--warn);
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 800;
+  margin-left: 6px;
+}
+
+/* Payment Options */
+.payment-option {
+  padding: 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: var(--surface2);
+}
+
+.payment-option:hover {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.payment-option.selected {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  box-shadow: 0 0 0 2px rgba(0, 200, 150, 0.2);
+}
+
+.payment-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.payment-note {
+  font-size: 11px;
+  color: var(--text3);
+}
+/* ── Reset & Variables ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0f1923;
+  --surface:#182130;
+  --surface2:#1e2d40;
+  --surface3:#243349;
+  --border:#2a3f58;
+  --accent:#00c896;
+  --accent-dim:rgba(0,200,150,0.12);
+  --accent2:#f97316;
+  --accent3:#6366f1;
+  --warn:#f59e0b;
+  --red:#ef4444;
+  --text:#e8f0f8;
+  --text2:#8fa3be;
+  --text3:#4d6680;
+  --font:'Nunito',sans-serif;
+  --mono:'JetBrains Mono',monospace;
+  --radius:14px;
+  --radius-sm:9px;
+  --bottom-nav:64px;
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font);}
+button{font-family:var(--font);cursor:pointer;border:none;outline:none;}
+input,select{font-family:var(--font);outline:none;}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+/* ── Layout ── */
+#app{display:flex;flex-direction:column;height:100vh;height:100dvh;}
+.screen{display:none;flex:1;flex-direction:column;overflow:hidden;}
+.screen.active{display:flex;}
+.scroll-area{flex:1;overflow-y:auto;padding:12px 14px 80px;-webkit-overflow-scrolling:touch;}
+
+/* ── Top Bar ── */
+.topbar{
+  background:var(--surface);
+  padding:10px 14px 8px;
+  padding-top:calc(10px + env(safe-area-inset-top,0px));
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;
+}
+.topbar-left{display:flex;align-items:center;gap:8px;}
+.topbar-logo{font-size:18px;font-weight:900;color:var(--accent);letter-spacing:-0.5px;}
+.topbar-logo span{color:var(--text2);font-weight:600;}
+.topbar-clock{font-family:var(--mono);font-size:12px;color:var(--accent);background:var(--accent-dim);padding:4px 9px;border-radius:20px;border:1px solid rgba(0,200,150,0.2);}
+.topbar-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:7px 14px;border-radius:20px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:5px;transition:all 0.15s;}
+.topbar-btn:active{transform:scale(0.95);}
+.topbar-btn.accent{background:var(--accent);color:#0f1923;border-color:var(--accent);}
+
+/* ── Bottom Nav ── */
+.bottom-nav{
+  display:flex;background:var(--surface);border-top:1px solid var(--border);
+  height:calc(var(--bottom-nav) + var(--safe-bottom));
+  padding-bottom:var(--safe-bottom);
+  flex-shrink:0;position:relative;z-index:50;
+}
+.nav-tab{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;cursor:pointer;color:var(--text3);transition:all 0.2s;
+  padding:8px 0;position:relative;
+}
+.nav-tab.active{color:var(--accent);}
+.nav-tab.active::before{content:'';position:absolute;top:0;left:30%;right:30%;height:2px;background:var(--accent);border-radius:0 0 3px 3px;}
+.nav-tab .icon{font-size:20px;line-height:1;}
+.nav-tab .label{font-size:10px;font-weight:700;letter-spacing:0.3px;}
+.nav-badge{position:absolute;top:6px;right:calc(50% - 18px);background:var(--red);color:#fff;font-size:9px;font-weight:800;min-width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 3px;font-family:var(--mono);}
+
+/* ── Cards ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.card-header{padding:12px 14px 8px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.card-title{font-size:13px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:0.8px;}
+
+/* ── Stat Cards ── */
+.stats-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;position:relative;overflow:hidden;}
+.stat-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;}
+.stat-card.c1::after{background:var(--accent);}
+.stat-card.c2::after{background:var(--accent3);}
+.stat-card.c3::after{background:var(--warn);}
+.stat-card.c4::after{background:var(--red);}
+.stat-emoji{font-size:22px;margin-bottom:6px;display:block;}
+.stat-val{font-size:26px;font-weight:900;letter-spacing:-1px;line-height:1;}
+.stat-card.c1 .stat-val{color:var(--accent);}
+.stat-card.c2 .stat-val{color:var(--accent3);}
+.stat-card.c3 .stat-val{color:var(--warn);}
+.stat-card.c4 .stat-val{color:var(--red);}
+.stat-lbl{font-size:11px;color:var(--text2);margin-top:3px;font-weight:700;}
+.stat-sub{font-size:10px;color:var(--text3);margin-top:1px;}
+
+/* ── Seat Grid ── */
+.seat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;}
+@media(max-width:400px){.seat-grid{grid-template-columns:repeat(2,1fr);}}
+@media(min-width:600px){.seat-grid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr));}}
+@media(min-width:900px){.seat-grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));}}
+
+.seat-tile{
+  background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);
+  padding:13px;cursor:pointer;transition:all 0.15s;user-select:none;
+  display:flex;flex-direction:column;
+}
+.seat-tile:active{transform:scale(0.97);}
+.seat-tile.available{border-color:rgba(0,200,150,0.3);}
+.seat-tile.available:active{box-shadow:0 0 0 3px rgba(0,200,150,0.2);}
+.seat-tile.occupied{border-color:rgba(99,102,241,0.4);background:rgba(99,102,241,0.05);}
+.seat-tile.occupied:active{box-shadow:0 0 0 3px rgba(99,102,241,0.2);}
+.seat-tile.reserved{border-color:rgba(245,158,11,0.3);}
+.seat-tile.maintenance{border-color:rgba(239,68,68,0.25);opacity:0.7;}
+.seat-tile-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;}
+.seat-number{font-family:var(--mono);font-size:10px;color:var(--text3);}
+.seat-status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.seat-status-dot.available{background:var(--accent);box-shadow:0 0 6px var(--accent);}
+.seat-status-dot.occupied{background:var(--accent3);box-shadow:0 0 6px var(--accent3);animation:blink 1.5s infinite;}
+.seat-status-dot.reserved{background:var(--warn);}
+.seat-status-dot.maintenance{background:var(--red);}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.3;}}
+.seat-name{font-size:14px;font-weight:800;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.seat-type-lbl{font-size:10px;color:var(--text3);margin-bottom:8px;}
+.seat-status-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:800;padding:3px 8px;border-radius:20px;font-family:var(--mono);text-transform:uppercase;letter-spacing:0.5px;}
+.seat-status-badge.available{background:rgba(0,200,150,0.12);color:var(--accent);}
+.seat-status-badge.occupied{background:rgba(99,102,241,0.15);color:var(--accent3);}
+.seat-status-badge.reserved{background:rgba(245,158,11,0.12);color:var(--warn);}
+.seat-status-badge.maintenance{background:rgba(239,68,68,0.12);color:var(--red);}
+.seat-timer{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--accent3);margin:6px 0 2px;letter-spacing:-0.5px;}
+.seat-user-name{font-size:11px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.seat-live-bill{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--accent);margin-top:4px;}
+.seat-rate-lbl{font-size:10px;color:var(--text3);margin-top:2px;}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:11px 18px;border-radius:var(--radius-sm);font-weight:800;font-size:14px;transition:all 0.15s;cursor:pointer;}
+.btn:active{transform:scale(0.96);}
+.btn-full{width:100%;}
+.btn-primary{background:var(--accent);color:#0f1923;border:none;}
+.btn-primary:active{background:#00aa80;}
+.btn-danger{background:rgba(239,68,68,0.15);color:var(--red);border:1.5px solid rgba(239,68,68,0.3);}
+.btn-danger:active{background:rgba(239,68,68,0.25);}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1.5px solid var(--border);}
+.btn-secondary:active{border-color:var(--accent);color:var(--accent);}
+.btn-warning{background:rgba(245,158,11,0.15);color:var(--warn);border:1.5px solid rgba(245,158,11,0.3);}
+.btn-sm{padding:7px 13px;font-size:12px;border-radius:8px;}
+.btn-icon{padding:9px;border-radius:var(--radius-sm);aspect-ratio:1;}
+
+/* ── Forms ── */
+.form-group{margin-bottom:14px;}
+.form-label{display:block;font-size:11px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;}
+.form-input,.form-select{
+  width:100%;padding:12px 14px;background:var(--surface2);border:1.5px solid var(--border);
+  border-radius:var(--radius-sm);color:var(--text);font-size:15px;transition:border-color 0.2s;
+}
+.form-input:focus,.form-select:focus{border-color:var(--accent);}
+.form-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238fa3be' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.form-input::placeholder{color:var(--text3);}
+
+/* ── Modal / Drawer ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:100;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity 0.25s;}
+.overlay.open{opacity:1;pointer-events:all;}
+.drawer{background:var(--surface);border-radius:22px 22px 0 0;padding:0 16px calc(20px + var(--safe-bottom));width:100%;max-height:92vh;overflow-y:auto;transform:translateY(100%);transition:transform 0.3s cubic-bezier(0.32,0.72,0,1);}
+.overlay.open .drawer{transform:translateY(0);}
+.drawer-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:12px auto 16px;}
+.drawer-title{font-size:18px;font-weight:900;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.drawer-title .accent{color:var(--accent);}
+
+/* ── Tables / Lists ── */
+.list-item{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.list-item:last-child{border-bottom:none;}
+.list-item-main{flex:1;min-width:0;}
+.list-item-title{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.list-item-sub{font-size:11px;color:var(--text2);margin-top:1px;}
+.list-item-right{text-align:right;flex-shrink:0;}
+.list-item-val{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--accent);}
+.list-item-val.red{color:var(--red);}
+.list-item-val.warn{color:var(--warn);}
+.list-item-val.purple{color:var(--accent3);}
+.list-item-meta{font-size:10px;color:var(--text3);margin-top:1px;}
+
+/* ── Pill badges ── */
+.pill{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:800;font-family:var(--mono);text-transform:uppercase;}
+.pill-green{background:rgba(0,200,150,0.12);color:var(--accent);}
+.pill-purple{background:rgba(99,102,241,0.15);color:var(--accent3);}
+.pill-warn{background:rgba(245,158,11,0.12);color:var(--warn);}
+.pill-red{background:rgba(239,68,68,0.12);color:var(--red);}
+.pill-blue{background:rgba(59,130,246,0.15);color:#60a5fa;}
+
+/* ── Receipt ── */
+.receipt{background:var(--surface2);border-radius:var(--radius);padding:16px;margin:8px 0;}
+.receipt-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;font-size:13px;}
+.receipt-row.total{border-top:1px dashed var(--border);padding-top:12px;margin-top:4px;font-size:17px;font-weight:900;}
+.receipt-row .lbl{color:var(--text2);}
+.receipt-row .val{font-family:var(--mono);font-weight:700;}
+.receipt-row.total .val{color:var(--accent);font-size:20px;}
+
+/* ── Segment Control ── */
+.seg-ctrl{display:flex;background:var(--surface2);border-radius:var(--radius-sm);padding:3px;gap:2px;margin-bottom:14px;}
+.seg-btn{flex:1;padding:8px;border:none;background:transparent;color:var(--text3);font-family:var(--font);font-size:12px;font-weight:700;border-radius:7px;transition:all 0.2s;cursor:pointer;}
+.seg-btn.active{background:var(--accent);color:#0f1923;}
+
+/* ── Chart bars ── */
+.chart-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.chart-lbl{font-size:11px;color:var(--text2);width:64px;text-align:right;flex-shrink:0;font-family:var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.chart-track{flex:1;height:22px;background:var(--surface2);border-radius:4px;overflow:hidden;}
+.chart-fill{height:100%;border-radius:4px;display:flex;align-items:center;padding:0 8px;font-size:10px;font-weight:800;font-family:var(--mono);min-width:24px;transition:width 0.8s ease;}
+.chart-val{font-family:var(--mono);font-size:11px;color:var(--text);width:60px;flex-shrink:0;text-align:right;}
+
+/* ── Empty state ── */
+.empty{text-align:center;padding:40px 20px;}
+.empty-icon{font-size:44px;margin-bottom:10px;opacity:0.25;}
+.empty-text{font-size:13px;color:var(--text3);font-weight:600;}
+
+/* ── Section heading ── */
+.sec-heading{font-size:12px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin:16px 0 8px;display:flex;align-items:center;justify-content:space-between;}
+
+/* ── Filter chips ── */
+.filter-chips{display:flex;gap:6px;overflow-x:auto;padding:0 0 6px;margin-bottom:10px;-webkit-overflow-scrolling:touch;}
+.filter-chips::-webkit-scrollbar{display:none;}
+.chip{padding:6px 13px;border-radius:20px;font-size:12px;font-weight:700;white-space:nowrap;cursor:pointer;border:1.5px solid var(--border);color:var(--text2);background:var(--surface);transition:all 0.15s;}
+.chip.active{background:var(--accent);color:#0f1923;border-color:var(--accent);}
+.chip:active{transform:scale(0.95);}
+
+/* ── Tablet adaptations ── */
+@media(min-width:600px){
+  .stats-row{grid-template-columns:repeat(4,1fr);}
+  .scroll-area{padding:16px 20px 80px;}
+  .topbar{padding:12px 20px 10px;}
+  .seat-grid{grid-template-columns:repeat(auto-fill,minmax(180px,1fr));}
+}
+@media(min-width:900px){
+  .bottom-nav{display:none;}
+  #sidebar{display:flex!important;flex-direction:column;width:200px;background:var(--surface);border-right:1px solid var(--border);height:100vh;position:fixed;left:0;top:0;z-index:30;padding-top:env(safe-area-inset-top,0px);}
+  #main-wrap{margin-left:200px;}
+  .screen.active{height:100vh;}
+  .scroll-area{padding-bottom:20px;}
+  .sidebar-logo{padding:20px 16px 16px;border-bottom:1px solid var(--border);}
+  .sidebar-item{display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;color:var(--text3);font-weight:700;font-size:14px;transition:all 0.15s;border-left:3px solid transparent;}
+  .sidebar-item.active{color:var(--accent);border-left-color:var(--accent);background:rgba(0,200,150,0.06);}
+  .sidebar-item:hover{color:var(--text);background:var(--surface2);}
+  .sidebar-badge{margin-left:auto;background:var(--red);color:#fff;font-size:9px;padding:1px 6px;border-radius:10px;font-family:var(--mono);}
+  .topbar{padding-left:220px;}
+}
+
+/* ── Misc ── */
+.divider{border:none;border-top:1px solid var(--border);margin:12px 0;}
+.mt-8{margin-top:8px;}
+.mt-12{margin-top:12px;}
+.gap-row{display:flex;gap:8px;}
+.color-accent{color:var(--accent);}
+.color-warn{color:var(--warn);}
+.color-red{color:var(--red);}
+.fw-900{font-weight:900;}
+.mono{font-family:var(--mono);}
+.text-center{text-align:center;}
+
+/* ── Printer UI ── */
+.printer-status-bar{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 14px;border-radius:var(--radius-sm);
+  border:1.5px solid var(--border);background:var(--surface2);
+  margin-bottom:14px;
+}
+.printer-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.printer-dot.connected{background:var(--accent);box-shadow:0 0 8px var(--accent);animation:blink 2s infinite;}
+.printer-dot.disconnected{background:var(--text3);}
+.printer-dot.connecting{background:var(--warn);animation:blink 0.5s infinite;}
+.printer-dot.error{background:var(--red);}
+.printer-status-text{flex:1;font-size:13px;font-weight:700;}
+.printer-status-sub{font-size:10px;color:var(--text3);margin-top:1px;}
+.conn-method-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;}
+.conn-method-btn{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  padding:14px 8px;border-radius:var(--radius);border:1.5px solid var(--border);
+  background:var(--surface2);cursor:pointer;transition:all 0.15s;
+}
+.conn-method-btn:active{transform:scale(0.95);}
+.conn-method-btn.selected{border-color:var(--accent);background:var(--accent-dim);}
+.conn-method-btn .cm-icon{font-size:24px;}
+.conn-method-btn .cm-label{font-size:11px;font-weight:800;color:var(--text2);}
+.conn-method-btn .cm-sub{font-size:9px;color:var(--text3);}
+.conn-method-btn.selected .cm-label{color:var(--accent);}
+.paper-toggle{display:flex;background:var(--surface2);border-radius:var(--radius-sm);padding:3px;gap:2px;}
+.paper-btn{flex:1;padding:9px;border:none;background:transparent;color:var(--text3);font-family:var(--font);font-size:13px;font-weight:800;border-radius:7px;cursor:pointer;transition:all 0.2s;}
+.paper-btn.active{background:var(--accent);color:#0f1923;}
+.printer-log{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-family:var(--mono);font-size:11px;height:80px;overflow-y:auto;color:var(--text2);}
+.printer-log .log-info{color:var(--text2);}
+.printer-log .log-success{color:var(--accent);}
+.printer-log .log-warn{color:var(--warn);}
+.printer-log .log-error{color:var(--red);}
+.print-btn-bar{display:flex;gap:8px;margin-top:8px;}
+
+/* Install banner */
+#install-banner{
+  position:fixed;bottom:calc(var(--bottom-nav) + var(--safe-bottom) + 10px);left:12px;right:12px;
+  background:var(--surface);border:1.5px solid var(--accent);border-radius:var(--radius);
+  padding:12px 14px;display:flex;align-items:center;gap:10px;z-index:200;
+  box-shadow:0 8px 32px rgba(0,0,0,0.4);animation:slideUp 0.3s ease;
+}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+#install-banner .ib-text{flex:1;font-size:12px;font-weight:700;color:var(--text);}
+#install-banner .ib-text span{color:var(--accent);}
+
+/* Sync Status Styles */
+.sync-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: var(--bg-light);
+}
+
+.sync-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.sync-dot.online { 
+  background: #4CAF50;
+  box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
+}
+
+.sync-dot.offline { 
+  background: #f44336;
+  box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.7);
+}
+
+.sync-dot.syncing { 
+  background: #FF9800;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); }
+  70% { box-shadow: 0 0 0 6px rgba(76, 175, 80, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
+}
+
+/* Rank Badge for Top Seats */
+.rank-badge {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  margin-right: 12px;
+}
+
+/* Report Styles */
+.receipt-section {
+  margin: 15px 0;
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.receipt-row {
+  display: flex;
+  justify-content: space-between;
+  margin: 8px 0;
+}
+
+.receipt-row.total {
+  font-weight: bold;
+  border-top: 2px solid #000;
+  padding-top: 10px;
+  margin-top: 10px;
+}
+
+/* ========== SYNC STATUS ========== */
+.sync-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: var(--bg-light);
+}
+
+.sync-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.sync-dot.online { background: #4CAF50; }
+.sync-dot.offline { background: #f44336; }
+.sync-dot.syncing { background: #FF9800; }
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); }
+  70% { box-shadow: 0 0 0 6px rgba(76, 175, 80, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
+}
+
+/* ========== SEAT & PAYMENT FORMS ========== */
+.form-group {
+  margin-bottom: 12px;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 0.9em;
+  color: var(--text2);
+}
+</style>
+</head>
+<body>
+
+<!-- Sidebar (tablet/desktop) -->
+<div id="sidebar" style="display:none;">
+  <div class="sidebar-logo">
+    <div style="font-size:20px;font-weight:900;color:var(--accent);">StudyHub</div>
+    <div style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-top:2px;">Co-working Manager</div>
+  </div>
+  <div id="sidebar-nav"></div>
+  <div style="padding:16px;border-top:1px solid var(--border);margin-top:auto;">
+    <div id="sidebar-clock" style="font-family:var(--mono);font-size:12px;color:var(--accent);"></div>
+    <div id="sidebar-date" style="font-size:11px;color:var(--text3);margin-top:2px;"></div>
+  </div>
+</div>
+
+<div id="main-wrap" style="display:flex;flex-direction:column;height:100vh;height:100dvh;">
+<div id="app">
+  <!-- Top Bar -->
+  <div class="topbar">
+    <div class="topbar-left">
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div class="topbar-clock" id="topbar-clock">00:00:00</div>
+       <div class="sync-status" id="sync-status"></div>
+       <div class="sync-dot offline" id="sync-dot"></div>
+         <span id="sync-text">Offline</span>
+      <button class="topbar-btn accent" id="topbar-action-btn" style="display:none;"></button>
+    </div>
+  </div>
+
+
+  <!-- Screens -->
+  <div id="screen-dashboard" class="screen active">
+    <div class="scroll-area" id="dashboard-content"></div>
+  </div>
+  <div id="screen-seats" class="screen">
+    <div class="scroll-area" id="seats-content"></div>
+  </div>
+  <div id="screen-sessions" class="screen">
+    <div class="scroll-area" id="sessions-content"></div>
+  </div>
+  <div id="screen-reports" class="screen">
+    <div class="scroll-area" id="reports-content"></div>
+  </div>
+  <div id="screen-settings" class="screen">
+    <div class="scroll-area" id="settings-content"></div>
+  </div>
+  <div id="screen-printer" class="screen">
+    <div class="scroll-area" id="printer-content"></div>
+  </div>
+
+  <!-- Bottom Nav -->
+  <nav class="bottom-nav" id="bottom-nav">
+    <div class="nav-tab active" data-screen="dashboard"><span class="icon">⊞</span><span class="label">Dashboard</span></div>
+    <div class="nav-tab" data-screen="seats"><span class="icon">🪑</span><span class="label">Seats</span><span class="nav-badge" id="occ-badge" style="display:none;"></span></div>
+    <div class="nav-tab" data-screen="sessions"><span class="icon">⏱</span><span class="label">Sessions</span></div>
+    <div class="nav-tab" data-screen="reports"><span class="icon">📊</span><span class="label">Reports</span></div>
+    <div class="nav-tab" data-screen="settings"><span class="icon">⚙️</span><span class="label">Settings</span></div>
+    <div class="nav-tab" data-screen="printer"><span class="icon">🖨️</span><span class="label">Printer</span></div>
+  </nav>
+</div>
+</div>
+
+<!-- Overlay / Drawer -->
+<div class="overlay" id="overlay" onclick="closeDrawer()">
+  <div class="drawer" id="drawer" onclick="event.stopPropagation()">
+    <div class="drawer-handle"></div>
+    <div id="drawer-content"></div>
+  </div>
+</div>
+
+<!-- Install Banner -->
+<div id="install-banner" style="display:none;">
+  <span style="font-size:22px;">📲</span>
+  <div class="ib-text">Install <span>StudyHub</span> as an app for offline use!</div>
+  <button class="btn btn-primary btn-sm" id="install-btn">Install</button>
+  <button class="btn btn-secondary btn-sm" onclick="document.getElementById('install-banner').style.display='none'">✕</button>
+</div>
+
+<script src="db.js"></script>
+<script src="printer.js"></script>
+<script>
+// ─── Storage (localStorage for persistence) ───────────────────────────────
+const DB = {
+  get(k,def){try{const v=localStorage.getItem(k);return v?JSON.parse(v):def;}catch{return def;}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}
+};
+
+// ─── State ────────────────────────────────────────────────────────────────
+const uid=()=>Math.random().toString(36).slice(2,9);
+const SEAT_TYPES=['Standard Desk','Premium Desk','Private Pod','Meeting Room','Standing Desk','Lounge Seat'];
+
+let state = {
+  seats: DB.get('sh_seats', [
+    {id:'s1',name:'Desk 01',type:'Standard Desk',status:'available',rateId:'r1',session:null},
+    {id:'s2',name:'Desk 02',type:'Standard Desk',status:'available',rateId:'r1',session:null},
+    {id:'s3',name:'Desk 03',type:'Premium Desk',status:'occupied',rateId:'r2',session:{id:uid(),user:'Maria Santos',startTime:Date.now()-4500000}},
+    {id:'s4',name:'Pod A',type:'Private Pod',status:'occupied',rateId:'r3',session:{id:uid(),user:'Juan dela Cruz',startTime:Date.now()-7200000}},
+    {id:'s5',name:'Pod B',type:'Private Pod',status:'available',rateId:'r3',session:null},
+    {id:'s6',name:'Standing 01',type:'Standing Desk',status:'available',rateId:'r1',session:null},
+    {id:'s7',name:'Meeting Rm 1',type:'Meeting Room',status:'reserved',rateId:'r4',session:null},
+    {id:'s8',name:'Desk 04',type:'Standard Desk',status:'maintenance',rateId:'r1',session:null},
+  ]),
+  rates: DB.get('sh_rates', [
+    {id:'r1',name:'Standard',perHour:35,minCharge:35},
+    {id:'r2',name:'Premium',perHour:55,minCharge:55},
+    {id:'r3',name:'Private Pod',perHour:80,minCharge:80},
+    {id:'r4',name:'Meeting Room',perHour:200,minCharge:200},
+  ]),
+  sessions: DB.get('sh_sessions', []),
+  currentScreen: 'dashboard',
+  reportTab: 'today',
+  seatFilter: 'all',
+  paymentTypes: getPaymentTypes(),
+  printerSettings: {
+        paperWidth: 80,
+        fontSize: 'normal',
+        showLogo: true,
+        headerText: 'STUDY HUB OFFICIAL RECEIPT'
+    }
+};
+
+// 1. Put your actual Firebase config here
+const firebaseConfig = {
+  apiKey: "AIzaSyBlGHfc916HTzQsa5Io_mcRUA8HxnUhCbk",
+  authDomain: "studyhub-7d67d.firebaseapp.com",
+  projectId: "studyhub-7d67d",
+  storageBucket: "studyhub-7d67d.firebasestorage.app",
+  messagingSenderId: "904508619714",
+  appId: "1:904508619714:web:8904bd8a1d6bf8488b345b"
+};
+
+// 2. Update your save function to push to Firebase
+const save = () => {
+  // Always save to local storage first (instant & offline safe)
+  DB.set('sh_seats', state.seats);
+  DB.set('sh_rates', state.rates);
+  DB.set('sh_sessions', state.sessions);
+
+  // Send to Firebase if we are connected
+  if (window.FirebaseDB && window.FirebaseDB.configured) {
+    state.seats.forEach(seat => window.FirebaseDB.set('seats', seat.id, seat));
+    state.rates.forEach(rate => window.FirebaseDB.set('rates', rate.id, rate));
+    state.sessions.forEach(session => window.FirebaseDB.set('sessions', session.id, session));
+  }
+};
+
+// 3. Tell the app to initialize Firebase when it loads
+window.addEventListener('DOMContentLoaded', async () => {
+  try {
+    await window.FirebaseDB.init(firebaseConfig);
+    console.log("🔥 Firebase Connected!");
+    
+    // Optional: Auto-update the screen if data changes on another device
+    window.FirebaseDB.listen('seats', (collection, docs) => {
+      if (docs.length > 0) {
+        state.seats = docs;
+        renderScreen(state.currentScreen);
+      }
+    });
+  } catch (error) {
+    console.warn("Firebase not configured or offline. Using local storage.", error);
+  }
+});
+
+// ─── Helpers ──────────────────────────────────────────────────────────────
+const fmt = n => `₱${Number(n).toFixed(2)}`;
+const fmtTime = s => {
+  const h=Math.floor(s/3600).toString().padStart(2,'0');
+  const m=Math.floor((s%3600)/60).toString().padStart(2,'0');
+  const sc=(s%60).toString().padStart(2,'0');
+  return `${h}:${m}:${sc}`;
+};
+const fmtDate = d => new Date(d).toLocaleString('en-PH',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+const fmtDateShort = d => new Date(d).toLocaleString('en-PH',{month:'short',day:'numeric'});
+const getRate = id => state.rates.find(r=>r.id===id)||state.rates[0]||{perHour:35,minCharge:35,name:'?'};
+const calcBill = (seat, now) => {
+  if(!seat.session) return 0;
+  const rate = getRate(seat.rateId);
+  const hrs = (now - seat.session.startTime)/1000/3600;
+  return Math.max(rate.minCharge, hrs * rate.perHour);
+};
+const occupied = () => state.seats.filter(s=>s.status==='occupied');
+const todaySessions = () => {
+  const today = new Date().toDateString();
+  return state.sessions.filter(s=>new Date(s.endTime).toDateString()===today);
+};
+
+// ─── Clock ────────────────────────────────────────────────────────────────
+let _now = Date.now();
+setInterval(()=>{
+  _now = Date.now();
+  const t = new Date(_now).toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  document.getElementById('topbar-clock').textContent = t;
+  const sc = document.getElementById('sidebar-clock');
+  const sd = document.getElementById('sidebar-date');
+  if(sc) sc.textContent = t;
+  if(sd) sd.textContent = new Date(_now).toLocaleDateString('en-PH',{weekday:'short',month:'short',day:'numeric'});
+  // Update timers in DOM
+  document.querySelectorAll('[data-timer-seat]').forEach(el=>{
+    const sid = el.dataset.timerSeat;
+    const seat = state.seats.find(s=>s.id===sid);
+    if(seat&&seat.session){
+      const e = Math.floor((_now-seat.session.startTime)/1000);
+      el.textContent = fmtTime(e);
+    }
+  });
+  document.querySelectorAll('[data-bill-seat]').forEach(el=>{
+    const sid = el.dataset.billSeat;
+    const seat = state.seats.find(s=>s.id===sid);
+    if(seat&&seat.session) el.textContent = fmt(calcBill(seat,_now));
+  });
+  // Badge
+  const occ = occupied().length;
+  const badge = document.getElementById('occ-badge');
+  if(badge){badge.style.display=occ?'flex':'none';badge.textContent=occ;}
+},1000);
+
+// ─── Navigation ───────────────────────────────────────────────────────────
+const SCREENS = ['dashboard','seats','sessions','reports','settings','printer'];
+const NAV_LABELS = {dashboard:{icon:'⊞',label:'Dashboard'},seats:{icon:'🪑',label:'Seats'},sessions:{icon:'⏱',label:'Sessions'},reports:{icon:'📊',label:'Reports'},settings:{icon:'⚙️',label:'Settings'},printer:{icon:'🖨️',label:'Printer'}};
+
+function navigate(screen){
+  state.currentScreen = screen;
+  SCREENS.forEach(s=>{
+    document.getElementById('screen-'+s).classList.toggle('active', s===screen);
+  });
+  document.querySelectorAll('.nav-tab').forEach(el=>{
+    el.classList.toggle('active', el.dataset.screen===screen);
+  });
+  document.querySelectorAll('.sidebar-item').forEach(el=>{
+    el.classList.toggle('active', el.dataset.screen===screen);
+  });
+  const actionBtn = document.getElementById('topbar-action-btn');
+  if(screen==='seats'){
+    actionBtn.style.display='flex';
+    actionBtn.textContent='+ Seat';
+    actionBtn.onclick=()=>openSeatForm();
+  } else if(screen==='settings'){
+    actionBtn.style.display='flex';
+    actionBtn.textContent='+ Rate';
+    actionBtn.onclick=()=>openRateForm();
+  } else if(screen==='printer'){
+    actionBtn.style.display='flex';
+    actionBtn.textContent='🖨️ Test';
+    actionBtn.onclick=()=>printerTestPrint();
+  } else {
+    actionBtn.style.display='none';
+  }
+  renderScreen(screen);
+}
+
+document.querySelectorAll('.nav-tab').forEach(el=>{
+  el.addEventListener('click',()=>navigate(el.dataset.screen));
+});
+
+// Build sidebar nav
+function buildSidebar(){
+  const nav = document.getElementById('sidebar-nav');
+  if(!nav) return;
+  nav.innerHTML = SCREENS.map(s=>`
+    <div class="sidebar-item ${s===state.currentScreen?'active':''}" data-screen="${s}" onclick="navigate('${s}')">
+      <span style="font-size:18px;">${NAV_LABELS[s].icon}</span>
+      <span>${NAV_LABELS[s].label}</span>
+      ${s==='seats'?`<span class="sidebar-badge" id="sb-occ" style="display:none;"></span>`:''}
+    </div>
+  `).join('');
+}
+buildSidebar();
+
+// ─── Drawer ───────────────────────────────────────────────────────────────
+function openDrawer(html){
+  document.getElementById('drawer-content').innerHTML = html;
+  document.getElementById('overlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeDrawer(){
+  document.getElementById('overlay').classList.remove('open');
+  document.body.style.overflow='';
+}
+
+// ─── Render Screens ───────────────────────────────────────────────────────
+function renderScreen(s){
+  if(s==='dashboard') renderDashboard();
+  else if(s==='seats') renderSeats();
+  else if(s==='sessions') renderSessions();
+  else if(s==='reports') renderReports();
+  else if(s==='settings') renderSettings();
+  else if(s==='printer') renderPrinterScreen();
+}
+
+// ── DASHBOARD ──
+function renderDashboard(){
+  const occ = occupied();
+  const avail = state.seats.filter(s=>s.status==='available');
+  const todayS = todaySessions();
+  const todayRev = todayS.reduce((a,s)=>a+(s.finalTotal || s.bill),0);
+  const liveRev = occ.reduce((a,s)=>a+(s.finalTotal || calcBill(s,_now)),0);
+  const el = document.getElementById('dashboard-content');
+  el.innerHTML = `
+    <div class="stats-row">
+      <div class="stat-card c1"><span class="stat-emoji">🪑</span><div class="stat-val">${state.seats.length}</div><div class="stat-lbl">Total Seats</div><div class="stat-sub">${avail.length} available</div></div>
+      <div class="stat-card c2"><span class="stat-emoji">👤</span><div class="stat-val">${occ.length}</div><div class="stat-lbl">Occupied</div><div class="stat-sub">right now</div></div>
+      <div class="stat-card c3"><span class="stat-emoji">📋</span><div class="stat-val">${todayS.length}</div><div class="stat-lbl">Sessions</div><div class="stat-sub">today</div></div>
+      <div class="stat-card c4"><span class="stat-emoji">💰</span><div class="stat-val">${fmt(todayRev+liveRev).replace('₱','')}</div><div class="stat-lbl">Revenue</div><div class="stat-sub">₱ today</div></div>
+    </div>
+    <div class="sec-heading">Live Seat Map <span class="color-accent" style="font-size:10px;cursor:pointer;" onclick="navigate('seats')">View All →</span></div>
+    <div class="seat-grid">
+      ${state.seats.map(seat=>seatTileHTML(seat)).join('')}
+    </div>
+    ${todayS.length>0?`
+      <div class="sec-heading" style="margin-top:20px;">Recent Sessions <span class="color-accent" style="font-size:10px;cursor:pointer;" onclick="navigate('reports')">Full Report →</span></div>
+      <div class="card">
+        ${todayS.slice(0,5).map(s=>`
+          <div class="list-item">
+            <div class="list-item-main">
+              <div class="list-item-title">${s.seatName} <span class="pill pill-purple">${s.seatType.split(' ')[0]}</span></div>
+              <div class="list-item-sub">${s.user} · ${(s.elapsed*60).toFixed(0)}min</div>
+            </div>
+            <div class="list-item-right"><div class="list-item-val">${fmt(s.finalTotal || s.bill)}</div><div class="list-item-meta">${fmtDate(s.endTime)}</div></div>
+          </div>
+        `).join('')}
+      </div>
+    `:''}
+  `;
+  attachSeatTileHandlers();
+}
+
+// ── SEAT TILE HTML ──
+function seatTileHTML(seat){
+  const elapsed = seat.session ? Math.floor((_now-seat.session.startTime)/1000) : 0;
+  const bill = calcBill(seat, _now);
+  const rate = getRate(seat.rateId);
+  return `
+    <div class="seat-tile ${seat.status}" data-seat-id="${seat.id}" onclick="handleSeatTap('${seat.id}')">
+      <div class="seat-tile-top">
+        <span class="seat-number">#${seat.id.toUpperCase()}</span>
+        <span class="seat-status-dot ${seat.status}"></span>
+      </div>
+      <div class="seat-name">${seat.name}</div>
+      <div class="seat-type-lbl">${seat.type}</div>
+      <span class="seat-status-badge ${seat.status}">${seat.status}</span>
+      ${seat.status==='occupied'&&seat.session?`
+        <div class="seat-timer" data-timer-seat="${seat.id}">${fmtTime(elapsed)}</div>
+        <div class="seat-user-name">👤 ${seat.session.user}</div>
+        <div class="seat-live-bill" data-bill-seat="${seat.id}">${fmt(bill)}</div>
+        <div class="seat-rate-lbl">${fmt(rate.perHour)}/hr</div>
+      `:`<div class="seat-rate-lbl" style="margin-top:6px;">${fmt(rate.perHour)}/hr</div>`}
+    </div>`;
+}
+
+function attachSeatTileHandlers(){} // handled by inline onclick
+
+function handleSeatTap(seatId){
+  const seat = state.seats.find(s=>s.id===seatId);
+  if(!seat) return;
+  openSeatDetail(seat);
+}
+
+// ── SEATS PAGE ──
+function renderSeats(){
+  const f = state.seatFilter;
+  const filtered = f==='all' ? state.seats : state.seats.filter(s=>s.status===f);
+  const el = document.getElementById('seats-content');
+  el.innerHTML = `
+    <div class="filter-chips">
+      ${['all','available','occupied','reserved','maintenance'].map(x=>`
+        <div class="chip ${f===x?'active':''}" onclick="setSeatFilter('${x}')">${x.charAt(0).toUpperCase()+x.slice(1)} ${x!=='all'?`(${state.seats.filter(s=>s.status===x).length})`:''}</div>
+      `).join('')}
+    </div>
+    <div class="seat-grid">${filtered.map(s=>seatTileHTML(s)).join('')}</div>
+  `;
+}
+function setSeatFilter(f){state.seatFilter=f;renderSeats();}
+
+// ── SESSIONS PAGE ──
+function renderSessions(){
+  const active = state.seats.filter(s=>s.status==='occupied'&&s.session);
+  const el = document.getElementById('sessions-content');
+  el.innerHTML = `
+    <div class="sec-heading">🟢 Active Sessions (${active.length})</div>
+    ${active.length===0?`<div class="empty"><div class="empty-icon">⏱</div><div class="empty-text">No active sessions</div></div>`:`
+      <div class="card" style="margin-bottom:16px;">
+        ${active.map(seat=>{
+          const elapsed = Math.floor((_now-seat.session.startTime)/1000);
+          const rate = getRate(seat.rateId);
+          return `
+            <div class="list-item">
+              <div class="list-item-main">
+                <div class="list-item-title">${seat.name} <span class="pill pill-green">${seat.type.split(' ')[0]}</span></div>
+                <div class="list-item-sub">👤 ${seat.session.user} · ${fmt(rate.perHour)}/hr</div>
+                <div style="margin-top:4px;font-family:var(--mono);font-size:15px;color:var(--accent3);" data-timer-seat="${seat.id}">${fmtTime(elapsed)}</div>
+              </div>
+              <div class="list-item-right">
+                <div class="list-item-val purple" data-bill-seat="${seat.id}">${fmt(calcBill(seat,_now))}</div>
+                <button class="btn btn-danger btn-sm" style="margin-top:6px;" onclick="confirmEndSession('${seat.id}')">End</button>
+              </div>
+            </div>`;
+        }).join('')}
+      </div>
+    `}
+    <div class="sec-heading">📋 Session History (${state.sessions.length})</div>
+    ${state.sessions.length===0?`<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">No completed sessions yet</div></div>`:`
+      <div class="card">
+        ${state.sessions.slice(0,50).map(s=>`
+          <div class="list-item">
+            <div class="list-item-main">
+              <div class="list-item-title">${s.seatName} <span class="pill pill-purple">${s.seatType.split(' ')[0]}</span></div>
+              <div class="list-item-sub">👤 ${s.user} · ${(s.elapsed*60).toFixed(0)}min · ${s.rateName}</div>
+              <div class="list-item-meta">${fmtDate(s.startTime)} → ${fmtDate(s.endTime)}</div>
+            </div>
+            <div class="list-item-right"><div class="list-item-val">${fmt(s.finalTotal || s.bill)}</div></div>
+          </div>
+        `).join('')}
+      </div>
+    `}
+  `;
+}
+
+// ── REPORTS PAGE ──
+function renderReports() {
+  const el = document.getElementById('reports-content');
+  
+  // Filter sessions based on selected tab
+  const now = new Date();
+  let filteredSessions = [];
+  
+  if (state.reportTab === 'today') {
+    filteredSessions = state.sessions.filter(s => {
+      const d = new Date(s.endTime);
+      return d.toDateString() === now.toDateString();
+    });
+  } else if (state.reportTab === 'week') {
+    const weekAgo = new Date(now);
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    filteredSessions = state.sessions.filter(s => new Date(s.endTime) >= weekAgo);
+  } else if (state.reportTab === 'month') {
+    filteredSessions = state.sessions.filter(s => {
+      const d = new Date(s.endTime);
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    });
+  } else {
+    filteredSessions = state.sessions;
+  }
+  
+  // Calculate totals
+  const totalRev = filteredSessions.reduce((a, s) => a + (s.finalTotal || s.bill), 0);
+  const totalHrs = filteredSessions.reduce((a, s) => a + s.elapsed, 0);
+  const avgBill = filteredSessions.length ? totalRev / filteredSessions.length : 0;
+  const totalDiscount = filteredSessions.reduce((a, s) => a + (s.discountAmount || 0), 0);
+  
+  // Payment breakdown
+  const paymentBreakdown = {};
+  state.paymentTypes.forEach(pt => {
+    paymentBreakdown[pt.id] = {
+      name: pt.name,
+      count: 0,
+      total: 0
+    };
+  });
+  
+  filteredSessions.forEach(s => {
+    if (s.paymentType && paymentBreakdown[s.paymentType]) {
+      paymentBreakdown[s.paymentType].count++;
+      paymentBreakdown[s.paymentType].total += (s.finalTotal || s.bill);
+    }
+  });
+  
+  // Seat type breakdown
+  const seatTypeBreakdown = {};
+  filteredSessions.forEach(s => {
+    if (!seatTypeBreakdown[s.seatType]) {
+      seatTypeBreakdown[s.seatType] = { count: 0, revenue: 0 };
+    }
+    seatTypeBreakdown[s.seatType].count++;
+    seatTypeBreakdown[s.seatType].revenue += (s.finalTotal || s.bill);
+  });
+  
+  // Rate breakdown
+  const rateBreakdown = {};
+  filteredSessions.forEach(s => {
+    const rateName = s.rateName || 'Unknown';
+    if (!rateBreakdown[rateName]) {
+      rateBreakdown[rateName] = { count: 0, revenue: 0 };
+    }
+    rateBreakdown[rateName].count++;
+    rateBreakdown[rateName].revenue += (s.finalTotal || s.bill);
+  });
+  
+  let html = `
+    <div class="seg-ctrl">
+      ${[['today','Today'],['week','7 Days'],['month','Month'],['all','All']].map(([v,l])=>`
+        <button class="seg-btn ${state.reportTab===v?'active':''}" onclick="setReportTab('${v}')">${l}</button>
+      `).join('')}
+    </div>
+    
+    <div style="display: flex; gap: 8px; margin-bottom: 14px;">
+      <button class="btn btn-primary" style="flex: 1;" onclick="printEndOfDayReport()">🖨️ Print Report</button>
+      <button class="btn btn-secondary" onclick="exportToCSV()">📥 Export CSV</button>
+    </div>
+    
+    <!-- Summary Stats -->
+    <div class="stats-row">
+      <div class="stat-card c1"><span class="stat-emoji">💰</span><div class="stat-val">${fmt(totalRev).replace('₱','')}</div><div class="stat-lbl">Revenue</div><div class="stat-sub">₱ total</div></div>
+      <div class="stat-card c2"><span class="stat-emoji">📋</span><div class="stat-val">${filteredSessions.length}</div><div class="stat-lbl">Sessions</div><div class="stat-sub">completed</div></div>
+      <div class="stat-card c3"><span class="stat-emoji">⏱</span><div class="stat-val">${totalHrs.toFixed(1)}</div><div class="stat-lbl">Hours</div><div class="stat-sub">billed</div></div>
+      <div class="stat-card c4"><span class="stat-emoji">📉</span><div class="stat-val">${fmt(totalDiscount).replace('₱','')}</div><div class="stat-lbl">Discount</div><div class="stat-sub">₱ given</div></div>
+    </div>
+    
+    <!-- Payment Method Breakdown -->
+    <div class="sec-heading">Payment Method Breakdown</div>
+    <div class="card" style="margin-bottom: 16px;">
+      ${Object.values(paymentBreakdown).map(p => `
+        <div class="list-item">
+          <div class="list-item-main">
+            <div class="list-item-title">${p.name}</div>
+            <div class="list-item-sub">${p.count} transaction(s)</div>
+          </div>
+          <div class="list-item-val">₱${p.total.toFixed(2)}</div>
+        </div>
+      `).join('')}
+    </div>
+    
+    <!-- Seat Type Breakdown -->
+    <div class="sec-heading">Revenue by Seat Type</div>
+    <div class="card" style="margin-bottom: 16px; padding: 12px 14px;">
+      ${Object.entries(seatTypeBreakdown).sort((a,b)=>b[1].revenue-a[1].revenue).map(([type, data]) => {
+        const percentage = totalRev > 0 ? (data.revenue / totalRev * 100).toFixed(0) : 0;
+        return `
+          <div class="chart-row">
+            <div class="chart-lbl">${type}</div>
+            <div class="chart-track">
+              <div class="chart-fill" style="width: ${percentage}%; background: linear-gradient(90deg, var(--accent3), var(--accent)); color: #0f1923;">
+                ${data.count}x
+              </div>
+            </div>
+            <div class="chart-val">₱${data.revenue.toFixed(2)}</div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+    
+    <!-- Rate Breakdown -->
+    <div class="sec-heading">Revenue by Rate</div>
+    <div class="card" style="margin-bottom: 16px;">
+      ${Object.entries(rateBreakdown).sort((a,b)=>b[1].revenue-a[1].revenue).map(([rate, data]) => `
+        <div class="list-item">
+          <div class="list-item-main">
+            <div class="list-item-title">${rate}</div>
+            <div class="list-item-sub">${data.count} session(s)</div>
+          </div>
+          <div class="list-item-val">₱${data.revenue.toFixed(2)}</div>
+        </div>
+      `).join('')}
+    </div>
+    
+    <!-- Session Details Table -->
+    <div class="sec-heading">Session Details (${filteredSessions.length})</div>
+    <div style="overflow-x: auto;">
+      <table style="width: 100%; border-collapse: collapse; background: var(--surface); border-radius: var(--radius); overflow: hidden;">
+        <thead>
+          <tr style="background: var(--surface2);">
+            <th style="padding: 10px; text-align: left; font-size: 11px; color: var(--text2); border-bottom: 1px solid var(--border);">Seat</th>
+            <th style="padding: 10px; text-align: left; font-size: 11px; color: var(--text2); border-bottom: 1px solid var(--border);">Customer</th>
+            <th style="padding: 10px; text-align: left; font-size: 11px; color: var(--text2); border-bottom: 1px solid var(--border);">Duration</th>
+            <th style="padding: 10px; text-align: left; font-size: 11px; color: var(--text2); border-bottom: 1px solid var(--border);">Payment</th>
+            <th style="padding: 10px; text-align: left; font-size: 11px; color: var(--text2); border-bottom: 1px solid var(--border);">Amount</th>
+            <th style="padding: 10px; text-align: left; font-size: 11px; color: var(--text2); border-bottom: 1px solid var(--border);">Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${filteredSessions.slice(0, 50).map(s => `
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 10px; font-size: 13px;">${s.seatName}</td>
+              <td style="padding: 10px; font-size: 13px; color: var(--text2);">${s.user}</td>
+              <td style="padding: 10px; font-size: 13px; font-family: var(--mono);">${(s.elapsed * 60).toFixed(0)}min</td>
+              <td style="padding: 10px; font-size: 12px;">
+                <span class="pill ${s.paymentType === 'cash' ? 'pill-green' : s.paymentType === 'gcash' ? 'pill-purple' : 'pill-blue'}">
+                  ${s.paymentTypeName || 'N/A'}
+                </span>
+              </td>
+              <td style="padding: 10px; font-size: 13px; font-family: var(--mono); font-weight: 700; color: var(--accent);">
+                ₱${(s.finalTotal || s.bill).toFixed(2)}
+                ${s.discountAmount > 0 ? `<br><span style="font-size: 10px; color: var(--text3);">-₱${s.discountAmount.toFixed(2)}</span>` : ''}
+              </td>
+              <td style="padding: 10px; font-size: 11px; color: var(--text3);">${fmtDate(s.endTime)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+    
+    ${filteredSessions.length === 0 ? '<div class="empty"><div class="empty-icon">📊</div><div class="empty-text">No sessions for this period</div></div>' : ''}
+    
+    <div style="height: 20px;"></div>
+  `;
+  
+  el.innerHTML = html;
+}
+
+// Add this CSV export function
+function exportToCSV() {
+  let csvContent = "data:text/csv;charset=utf-8,";
+  csvContent += "Seat,Customer,Start Time,End Time,Duration (hours),Original Bill,Discount,Final Total,Payment Method,Handled By\n";
+  
+  state.sessions.forEach(s => {
+    const row = [
+      s.seatName,
+      s.user,
+      new Date(s.startTime).toLocaleString(),
+      new Date(s.endTime).toLocaleString(),
+      s.elapsed.toFixed(2),
+      s.originalBill || s.bill,
+      s.discountAmount || 0,
+      s.finalTotal || s.bill,
+      s.paymentTypeName || 'N/A',
+      s.handledBy || 'System'
+    ].map(field => `"${field}"`).join(",");
+    csvContent += row + "\n";
+  });
+  
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", `studyhub_report_${new Date().toISOString().split('T')[0]}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+// Add this function to calculate payment breakdown
+function getPaymentBreakdown() {
+  const breakdown = {};
+  
+  state.paymentTypes.forEach(pt => {
+    breakdown[pt.id] = {
+      name: pt.name,
+      count: 0,
+      total: 0
+    };
+  });
+  
+  state.sessions.forEach(session => {
+    if (session.paymentType && breakdown[session.paymentType]) {
+      breakdown[session.paymentType].count++;
+      breakdown[session.paymentType].total += session.bill;
+    }
+  });
+  
+  return breakdown;
+}
+
+
+// ── SETTINGS PAGE ──
+function renderSettings(){
+  const el = document.getElementById('settings-content');
+  el.innerHTML = `
+    <div class="sec-heading">Pricing Rates</div>
+    <div class="card" style="margin-bottom:14px;">
+      ${state.rates.map(r=>`
+        <div class="list-item">
+          <div class="list-item-main">
+            <div class="list-item-title">${r.name}</div>
+            <div class="list-item-sub">Min charge: ${fmt(r.minCharge)}</div>
+          </div>
+          <div class="list-item-right">
+            <div class="list-item-val">${fmt(r.perHour)}/hr</div>
+            <div style="display:flex;gap:6px;margin-top:4px;justify-content:flex-end;">
+              <button class="btn btn-secondary btn-sm" onclick="openRateForm('${r.id}')">Edit</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteRate('${r.id}')">🗑</button>
+            </div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+    <button class="btn btn-primary btn-full" onclick="openRateForm()">+ Add New Rate</button>
+
+    <div class="sec-heading" style="margin-top:20px;">All Seats</div>
+    <div class="card">
+      ${state.seats.map(s=>{
+        const rate = getRate(s.rateId);
+        return `
+          <div class="list-item">
+            <div class="list-item-main">
+              <div class="list-item-title">${s.name}</div>
+              <div class="list-item-sub">${s.type} · ${rate.name} (${fmt(rate.perHour)}/hr)</div>
+            </div>
+            <div class="list-item-right">
+              <span class="pill pill-${s.status==='available'?'green':s.status==='occupied'?'purple':s.status==='reserved'?'warn':'red'}">${s.status}</span>
+              <div style="display:flex;gap:6px;margin-top:6px;justify-content:flex-end;">
+                <button class="btn btn-secondary btn-sm" onclick="openSeatForm('${s.id}')">Edit</button>
+                ${s.status!=='occupied'?`<button class="btn btn-danger btn-sm" onclick="deleteSeat('${s.id}')">🗑</button>`:''}
+              </div>
+            </div>
+          </div>`;
+      }).join('')}
+    </div>
+    <button class="btn btn-primary btn-full mt-12" onclick="openSeatForm()">+ Add New Seat</button>
+    
+
+
+    <div class="sec-heading">Payment Methods</div>
+<div class="card" style="margin-bottom: 14px;">
+    ${state.paymentTypes.map(pt => `
+        <div class="list-item">
+            <div class="list-item-main">
+                <div class="list-item-title">${pt.name}</div>
+                <div class="list-item-sub">${pt.isActive ? 'Active' : 'Disabled'}</div>
+            </div>
+            <div style="display: flex; gap: 6px;">
+                <button class="btn btn-secondary btn-sm" onclick="openPaymentTypeForm('${pt.id}')">Edit</button>
+                <button class="btn btn-${pt.isActive ? 'danger' : 'success'} btn-sm" 
+                        onclick="togglePaymentType('${pt.id}')">
+                    ${pt.isActive ? 'Disable' : 'Enable'}
+                </button>
+            </div>
+        </div>
+    `).join('')}
+</div>
+<button class="btn btn-primary btn-full" onclick="openPaymentTypeForm()">+ Add Payment Method</button>
+    <div class="sec-heading" style="margin-top:20px;">Data Management</div>
+    <div class="card" style="padding:14px;">
+      <div style="font-size:13px;color:var(--text2);margin-bottom:12px;">All data is saved locally on this device. Works fully offline.</div>
+      <button class="btn btn-danger btn-full" onclick="clearHistory()">🗑 Clear Session History</button>
+    </div>
+    <div style="height:20px;"></div>
+  `;
+}
+
+// ── SETTINGS: PAYMENT TYPES ──
+
+function openPaymentTypeForm(paymentId = null) {
+    const pt = paymentId ? state.paymentTypes.find(p => p.id === paymentId) : null;
+    openDrawer(`
+        <div class="drawer-title">${pt ? 'Edit' : 'Add'} Payment Method</div>
+        <div class="form-group">
+            <label class="form-label">Name</label>
+            <input class="form-input" id="pt-name" value="${pt?.name || ''}">
+        </div>
+        <div class="btn-group">
+            <button class="btn btn-primary" onclick="savePaymentType('${paymentId || ''}')">Save</button>
+            <button class="btn btn-secondary" onclick="closeDrawer()">Cancel</button>
+        </div>
+    `);
+}
+
+function savePaymentType(paymentId) {
+    const name = document.getElementById('pt-name').value.trim();
+    if (!name) {
+        alert('Please enter a name for the payment method.');
+        return;
+    }
+    
+    if (paymentId) {
+        state.paymentTypes = state.paymentTypes.map(pt => 
+            pt.id === paymentId ? {...pt, name} : pt
+        );
+    } else {
+        state.paymentTypes.push({
+            id: uid(),
+            name,
+            isActive: true
+        });
+    }
+    
+    savePaymentTypes(state.paymentTypes);
+    renderSettings();
+    closeDrawer();
+}
+
+function togglePaymentType(paymentId) {
+    state.paymentTypes = state.paymentTypes.map(pt => 
+        pt.id === paymentId ? {...pt, isActive: !pt.isActive} : pt
+    );
+    savePaymentTypes(state.paymentTypes);
+    renderSettings();
+}
+
+// ─── Session Actions ──────────────────────────────────────────────────────
+function openSeatDetail(seat){
+  const rate = getRate(seat.rateId);
+  const elapsed = seat.session ? Math.floor((_now-seat.session.startTime)/1000) : 0;
+  const bill = calcBill(seat, _now);
+  openDrawer(`
+    <div class="drawer-title">🪑 <span class="accent">${seat.name}</span></div>
+    <div class="receipt">
+      <div class="receipt-row"><span class="lbl">Type</span><span class="val">${seat.type}</span></div>
+      <div class="receipt-row"><span class="lbl">Rate</span><span class="val">${rate.name} · ${fmt(rate.perHour)}/hr</span></div>
+      <div class="receipt-row"><span class="lbl">Status</span><span class="val"><span class="pill pill-${seat.status==='available'?'green':seat.status==='occupied'?'purple':seat.status==='reserved'?'warn':'red'}">${seat.status}</span></span></div>
+      ${seat.session?`
+        <div class="receipt-row"><span class="lbl">Customer</span><span class="val">${seat.session.user}</span></div>
+        <div class="receipt-row"><span class="lbl">Elapsed</span><span class="val" id="detail-timer" data-timer-seat="${seat.id}">${fmtTime(elapsed)}</span></div>
+        <div class="receipt-row total"><span class="lbl">Live Bill</span><span class="val" data-bill-seat="${seat.id}">${fmt(bill)}</span></div>
+      `:''}
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px;">
+      ${seat.status==='available'?`<button class="btn btn-primary btn-full" onclick="openStartSession('${seat.id}')">▶ Start Session</button>`:''}
+      ${seat.status==='occupied'?`<button class="btn btn-danger btn-full" onclick="confirmEndSession('${seat.id}')">■ End & Checkout</button>`:''}
+      <button class="btn btn-secondary btn-full" onclick="openSeatForm('${seat.id}')">✏ Edit Seat</button>
+      <button class="btn btn-secondary btn-full" onclick="closeDrawer()">Close</button>
+    </div>
+  `);
+}
+
+function openStartSession(seatId){
+  const seat = state.seats.find(s=>s.id===seatId);
+  if(!seat) return;
+  closeDrawer();
+  setTimeout(()=>{
+    openDrawer(`
+      <div class="drawer-title">▶ Start Session</div>
+      <div style="background:var(--accent-dim);border:1px solid rgba(0,200,150,0.2);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:16px;font-size:13px;">
+        <b>${seat.name}</b> · ${seat.type}
+      </div>
+      <div class="form-group">
+        <label class="form-label">Customer Name or ID</label>
+        <input class="form-input" id="start-user" placeholder="e.g. Maria Santos or Member #1042" autocomplete="off"/>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px;">
+        <button class="btn btn-primary btn-full" onclick="doStartSession('${seatId}')">▶ Start Timer</button>
+        <button class="btn btn-secondary btn-full" onclick="closeDrawer()">Cancel</button>
+      </div>
+    `);
+    setTimeout(()=>document.getElementById('start-user')?.focus(),300);
+  },200);
+}
+
+function doStartSession(seatId){
+  const nameEl = document.getElementById('start-user');
+  const name = nameEl?.value?.trim();
+  if(!name){nameEl?.focus();return;}
+  state.seats = state.seats.map(s=>
+    s.id===seatId ? {...s, status:'occupied', session:{id:uid(), user:name, startTime:Date.now()}} : s
+  );
+  save();
+  closeDrawer();
+  renderScreen(state.currentScreen);
+}
+
+function confirmEndSession(seatId){
+  const seat = state.seats.find(s=>s.id===seatId);
+  if(!seat||!seat.session) return;
+  const rate = getRate(seat.rateId);
+  const elapsed = (_now - seat.session.startTime)/1000;
+  const bill = calcBill(seat, _now);
+  closeDrawer();
+  setTimeout(()=>{
+    openDrawer(`
+      <div class="drawer-title">■ End Session</div>
+      <div class="receipt">
+        <div class="receipt-row"><span class="lbl">Seat</span><span class="val">${seat.name}</span></div>
+        <div class="receipt-row"><span class="lbl">Customer</span><span class="val">${seat.session.user}</span></div>
+        <div class="receipt-row"><span class="lbl">Duration</span><span class="val">${fmtTime(Math.floor(elapsed))}</span></div>
+        <div class="receipt-row"><span class="lbl">Rate</span><span class="val">${fmt(rate.perHour)}/hr</span></div>
+        <div class="receipt-row"><span class="lbl">Min Charge</span><span class="val">${fmt(rate.minCharge)}</span></div>
+        <div class="receipt-row total"><span class="lbl">TOTAL</span><span class="val">${fmt(bill)}</span></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
+        <button class="btn btn-danger btn-full" onclick="doEndSession('${seatId}')">✓ Confirm Checkout</button>
+        <button class="btn btn-secondary btn-full" onclick="closeDrawer()">Cancel</button>
+      </div>
+    `);
+  },200);
+}
+
+// End session and proceed to payment
+function doEndSession(seatId){
+  const seat = state.seats.find(s=>s.id===seatId);
+  if(!seat||!seat.session) return;
+  const rate = getRate(seat.rateId);
+  const endTime = Date.now();
+  const elapsed = (endTime - seat.session.startTime)/1000/3600;
+  const bill = Math.max(rate.minCharge, elapsed * rate.perHour);
+  
+  // Show payment type selection
+  openPaymentSelection(seatId, seat, rate, bill, endTime, elapsed);
+}
+
+function openPaymentSelection(seatId, seat, rate, bill, endTime, elapsed) {
+  const activePaymentTypes = state.paymentTypes.filter(pt => pt.isActive);
+  
+  let paymentOptions = '';
+  activePaymentTypes.forEach(pt => {
+    paymentOptions += `
+      <div class="payment-option" data-payment-id="${pt.id}" onclick="selectPaymentType('${pt.id}', ${bill})">
+        <div class="payment-name">${pt.name}</div>
+        ${pt.id === 'cash' ? '<div class="payment-note">Enter amount received</div>' : ''}
+      </div>
+    `;
+  });
+  
+  openDrawer(`
+    <div class="drawer-title">💳 Payment</div>
+    <div class="receipt" style="margin-bottom: 20px;">
+      <div class="receipt-row"><span class="lbl">Seat</span><span class="val">${seat.name}</span></div>
+      <div class="receipt-row"><span class="lbl">Customer</span><span class="val">${seat.session.user}</span></div>
+      <div class="receipt-row"><span class="lbl">Original Bill</span><span class="val">₱${bill.toFixed(2)}</span></div>
+      
+      <!-- Discount Section -->
+      <div class="receipt-row" style="border-bottom: 1px dashed var(--border); padding-bottom: 12px;">
+        <span class="lbl">Discount</span>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <select id="discount-type" style="flex: 1; padding: 6px; border-radius: 6px; background: var(--surface2); border: 1px solid var(--border); color: var(--text);" onchange="updateDiscount(${bill})">
+            <option value="none">No Discount</option>
+            <option value="percentage">Percentage (%)</option>
+            <option value="fixed">Fixed Amount (₱)</option>
+          </select>
+          <input type="number" id="discount-value" style="width: 80px; padding: 6px; border-radius: 6px; background: var(--surface2); border: 1px solid var(--border); color: var(--text);" 
+                 placeholder="0" min="0" max="${bill}" step="0.01" oninput="updateDiscount(${bill})" disabled>
+        </div>
+      </div>
+      
+      <div class="receipt-row" id="discount-display-row" style="display: none;">
+        <span class="lbl">Discount Amount</span>
+        <span class="val" id="discount-amount" style="color: var(--accent);">-₱0.00</span>
+      </div>
+      
+      <div class="receipt-row total"><span class="lbl">Final Total</span><span class="val" id="final-total">₱${bill.toFixed(2)}</span></div>
+    </div>
+    
+    <div class="sec-heading">Select Payment Method</div>
+    <div id="payment-options" style="margin-bottom: 16px;">
+      ${paymentOptions}
+    </div>
+    
+    <!-- Cash Input (hidden by default) -->
+    <div id="cash-input-section" style="display: none; margin-bottom: 16px;">
+      <div class="form-group">
+        <label class="form-label">Amount Received (₱)</label>
+        <input class="form-input" id="amount-received" type="number" min="0" step="0.01" 
+               value="" oninput="calculateChange()" placeholder="Enter amount">
+      </div>
+      <div id="change-display" style="text-align: center; font-size: 16px; font-weight: bold; margin-top: 10px;">
+        Change: <span id="change-amount">₱0.00</span>
+      </div>
+    </div>
+    
+    <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 12px;">
+      <button class="btn btn-primary btn-full" id="pay-btn" onclick="processPayment('${seatId}', ${bill}, ${elapsed})" disabled>
+        💳 Pay Now
+      </button>
+      <button class="btn btn-secondary btn-full" onclick="closeDrawer()">Cancel</button>
+    </div>
+  `);
+}
+
+function updateDiscount(originalBill) {
+  const discountType = document.getElementById('discount-type').value;
+  const discountValue = parseFloat(document.getElementById('discount-value').value) || 0;
+  const discountDisplayRow = document.getElementById('discount-display-row');
+  const discountAmountEl = document.getElementById('discount-amount');
+  const finalTotalEl = document.getElementById('final-total');
+  
+  // Enable/disable discount input
+  document.getElementById('discount-value').disabled = discountType === 'none';
+  
+  let discountAmount = 0;
+  let finalTotal = originalBill;
+  
+  if (discountType === 'percentage') {
+    discountAmount = originalBill * (discountValue / 100);
+    finalTotal = originalBill - discountAmount;
+  } else if (discountType === 'fixed') {
+    discountAmount = Math.min(discountValue, originalBill);
+    finalTotal = originalBill - discountAmount;
+  }
+  
+  // Update display
+  if (discountType !== 'none' && discountValue > 0) {
+    discountDisplayRow.style.display = 'flex';
+    discountAmountEl.textContent = `-₱${discountAmount.toFixed(2)}`;
+  } else {
+    discountDisplayRow.style.display = 'none';
+  }
+  
+  finalTotalEl.textContent = `₱${finalTotal.toFixed(2)}`;
+  
+  // Update cash input min value if showing
+  const cashInput = document.getElementById('amount-received');
+  if (cashInput) {
+    cashInput.min = finalTotal;
+    calculateChange();
+  }
+}
+
+function selectPaymentType(paymentId, bill) {
+  // Mark selected payment
+  document.querySelectorAll('.payment-option').forEach(el => {
+    el.classList.remove('selected');
+  });
+  document.querySelector(`[data-payment-id="${paymentId}"]`).classList.add('selected');
+  
+  // Show/hide cash input
+  const cashInput = document.getElementById('cash-input-section');
+  if (paymentId === 'cash') {
+    cashInput.style.display = 'block';
+    document.getElementById('amount-received').value = bill.toFixed(2);
+    calculateChange(bill);
+    document.getElementById('amount-received').focus();
+  } else {
+    cashInput.style.display = 'none';
+  }
+  
+  // Enable pay button
+  document.getElementById('pay-btn').disabled = false;
+}
+
+function calculateChange() {
+  const amountReceived = parseFloat(document.getElementById('amount-received').value) || 0;
+  const finalTotal = parseFloat(
+  document.getElementById('final-total').textContent
+    .replace(/[^0-9.]/g, '') // Remove all non-numeric characters
+    .trim()
+);
+  const change = amountReceived - finalTotal;
+  
+  const changeAmountElement = document.getElementById('change-amount');
+  
+  if (change >= 0) {
+    changeAmountElement.textContent = `₱${change.toFixed(2)}`;
+    changeAmountElement.style.color = "var(--accent)";
+  } else {
+    changeAmountElement.textContent = `(₱${Math.abs(change).toFixed(2)} short)`;
+    changeAmountElement.style.color = "var(--red)";
+  }
+}
+
+function processPayment(seatId, originalBill, elapsed) {
+  const selectedPayment = document.querySelector('.payment-option.selected');
+  if (!selectedPayment) {
+    alert('Please select a payment method');
+    return;
+  }
+  
+  const paymentId = selectedPayment.dataset.paymentId;
+  const paymentType = state.paymentTypes.find(pt => pt.id === paymentId);
+  
+  // Get discount details
+  const discountType = document.getElementById('discount-type').value;
+  const discountValue = parseFloat(document.getElementById('discount-value').value) || 0;
+  const finalTotal = parseFloat(document.getElementById('final-total').textContent.replace('₱', ''));
+  
+  let discountAmount = 0;
+  if (discountType === 'percentage') {
+    discountAmount = originalBill * (discountValue / 100);
+  } else if (discountType === 'fixed') {
+    discountAmount = discountValue;
+  }
+  
+  const seat = state.seats.find(s=>s.id===seatId);
+  const rate = getRate(seat.rateId);
+  const endTime = Date.now();
+  
+  let amountReceived = finalTotal;
+  let change = 0;
+  
+  if (paymentId === 'cash') {
+    amountReceived = parseFloat(document.getElementById('amount-received').value) || 0;
+    change = amountReceived - finalTotal;
+    
+    if (amountReceived < finalTotal) {
+      alert(`Insufficient amount. Need ₱${(finalTotal - amountReceived).toFixed(2)} more.`);
+      return;
+    }
+  }
+  
+  const record = {
+    id: uid(),
+    seatId,
+    seatName: seat.name,
+    seatType: seat.type,
+    user: seat.session.user,
+    startTime: seat.session.startTime,
+    endTime,
+    elapsed,
+    originalBill,
+    discountType,
+    discountValue,
+    discountAmount,
+    finalTotal,
+    rateName: rate.name,
+    ratePerHour: rate.perHour,
+    minCharge: rate.minCharge,
+    paymentType: paymentId,
+    paymentTypeName: paymentType.name,
+    amountReceived,
+    change,
+    handledBy: "Staff"
+  };
+  
+  state.sessions = [record, ...state.sessions];
+  state.seats = state.seats.map(s => s.id === seatId ? {...s, status: 'available', session: null} : s);
+  save();
+  
+  closeDrawer();
+  setTimeout(() => {
+    showReceipt(record);
+    if (printerSettings.autoPrint) printSessionReceipt(record);
+  }, 250);
+}
+
+function showReceipt(rec){
+  window._lastRec = rec;
+  openDrawer(`
+    <div class="drawer-title">📃 Receipt</div>
+    <div class="receipt">
+      <div class="receipt-row"><span class="lbl">Seat</span><span class="val">${rec.seatName}</span></div>
+      <div class="receipt-row"><span class="lbl">Customer</span><span class="val">${rec.user}</span></div>
+      <div class="receipt-row"><span class="lbl">Duration</span><span class="val">${fmtTime(Math.floor(rec.elapsed * 3600))}</span></div>
+      <div class="receipt-row"><span class="lbl">Original Bill</span><span class="val">₱${rec.originalBill?.toFixed(2) || rec.bill.toFixed(2)}</span></div>
+      
+      ${rec.discountAmount > 0 ? `
+      <div class="receipt-row"><span class="lbl">Discount</span><span class="val" style="color: var(--accent);">-₱${rec.discountAmount.toFixed(2)}</span></div>
+      ` : ''}
+      
+      <div class="receipt-row total"><span class="lbl">Total Bill</span><span class="val">₱${(rec.finalTotal || rec.bill).toFixed(2)}</span></div>
+      
+      <div class="receipt-row">
+        <span class="lbl">Payment Method</span>
+        <span class="val">${rec.paymentTypeName || 'N/A'}</span>
+      </div>
+      
+      ${rec.paymentType === 'cash' ? `
+      <div class="receipt-row">
+        <span class="lbl">Amount Received</span>
+        <span class="val">₱${rec.amountReceived?.toFixed(2) || '0.00'}</span>
+      </div>
+      <div class="receipt-row">
+        <span class="lbl">Change</span>
+        <span class="val">₱${rec.change?.toFixed(2) || '0.00'}</span>
+      </div>
+      ` : ''}
+      
+      <div class="receipt-row">
+        <span class="lbl">Handled By</span>
+        <span class="val">${rec.handledBy || 'System'}</span>
+      </div>
+    </div>
+    <div style="text-align:center;font-size:12px;color:var(--text3);margin:12px 0 16px;">Thank you for using StudyHub! 📚</div>
+    <div style="display:flex;gap:8px;">
+      ${window.printer?.isConnected?`<button class="btn btn-secondary" style="flex:1;" onclick="printSessionReceipt(window._lastRec)">🖨️ Print</button>`:''}
+      <button class="btn btn-primary" style="flex:1;" onclick="closeDrawer();renderScreen(state.currentScreen);">Done</button>
+    </div>
+  `);
+  renderScreen(state.currentScreen);
+}
+
+// ─── Seat Form ────────────────────────────────────────────────────────────
+function openSeatForm(seatId){
+  const seat = seatId ? state.seats.find(s=>s.id===seatId) : null;
+  closeDrawer();
+  setTimeout(()=>{
+    openDrawer(`
+      <div class="drawer-title">${seat?'✏ Edit Seat':'➕ Add Seat'}</div>
+      <div class="form-group">
+        <label class="form-label">Seat Name</label>
+        <input class="form-input" id="sf-name" value="${seat?.name||''}" placeholder="e.g. Desk 05, Pod C"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Type</label>
+        <select class="form-select" id="sf-type">
+          ${SEAT_TYPES.map(t=>`<option value="${t}" ${seat?.type===t?'selected':''}>${t}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Pricing Rate</label>
+        <select class="form-select" id="sf-rate">
+          ${state.rates.map(r=>`<option value="${r.id}" ${seat?.rateId===r.id?'selected':''}>${r.name} (${fmt(r.perHour)}/hr)</option>`).join('')}
+        </select>
+      </div>
+      ${seat?`
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select class="form-select" id="sf-status" ${seat.status==='occupied'?'disabled':''}>
+            ${['available','reserved','maintenance'].map(x=>`<option value="${x}" ${seat.status===x?'selected':''}>${x.charAt(0).toUpperCase()+x.slice(1)}</option>`).join('')}
+          </select>
+        </div>
+      `:''}
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
+        <button class="btn btn-primary btn-full" onclick="saveSeat('${seat?.id||''}')">Save</button>
+        <button class="btn btn-secondary btn-full" onclick="closeDrawer()">Cancel</button>
+      </div>
+    `);
+  },200);
+}
+
+function saveSeat(seatId){
+  const name = document.getElementById('sf-name')?.value?.trim();
+  const type = document.getElementById('sf-type')?.value;
+  const rateId = document.getElementById('sf-rate')?.value;
+  const statusEl = document.getElementById('sf-status');
+  if(!name) return;
+  if(seatId){
+    state.seats = state.seats.map(s=>{
+      if(s.id!==seatId) return s;
+      return {...s, name, type, rateId, status: statusEl&&!statusEl.disabled ? statusEl.value : s.status};
+    });
+  } else {
+    state.seats.push({id:uid(),name,type,rateId,status:'available',session:null});
+  }
+  save();
+  closeDrawer();
+  renderScreen(state.currentScreen);
+}
+
+function deleteSeat(seatId){
+  if(!confirm('Delete this seat? This cannot be undone.')) return;
+  
+  // 1. Remove from local state
+  state.seats = state.seats.filter(s=>s.id!==seatId);
+  save(); // Updates local storage
+  
+  // 2. NEW: Tell Firebase to delete it permanently
+  if (window.FirebaseDB && window.FirebaseDB.configured) {
+    window.FirebaseDB.remove('seats', seatId);
+  }
+
+  closeDrawer();
+  renderScreen(state.currentScreen);
+}
+
+// ─── Rate Form ────────────────────────────────────────────────────────────
+function openRateForm(rateId){
+  const rate = rateId ? state.rates.find(r=>r.id===rateId) : null;
+  closeDrawer();
+  setTimeout(()=>{
+    openDrawer(`
+      <div class="drawer-title">${rate?'✏ Edit Rate':'➕ Add Rate'}</div>
+      <div class="form-group">
+        <label class="form-label">Rate Name</label>
+        <input class="form-input" id="rf-name" value="${rate?.name||''}" placeholder="e.g. Standard, VIP"/>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Per Hour (₱)</label>
+          <input class="form-input" id="rf-hour" type="number" min="1" value="${rate?.perHour||35}"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Min Charge (₱)</label>
+          <input class="form-input" id="rf-min" type="number" min="1" value="${rate?.minCharge||35}"/>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
+        <button class="btn btn-primary btn-full" onclick="saveRate('${rate?.id||''}')">Save</button>
+        <button class="btn btn-secondary btn-full" onclick="closeDrawer()">Cancel</button>
+      </div>
+    `);
+  },200);
+}
+
+function saveRate(rateId){
+  const name = document.getElementById('rf-name')?.value?.trim();
+  const perHour = parseFloat(document.getElementById('rf-hour')?.value)||35;
+  const minCharge = parseFloat(document.getElementById('rf-min')?.value)||35;
+  if(!name) return;
+  if(rateId){
+    state.rates = state.rates.map(r=>r.id===rateId?{...r,name,perHour,minCharge}:r);
+  } else {
+    state.rates.push({id:uid(),name,perHour,minCharge});
+  }
+  save();
+  closeDrawer();
+  renderScreen(state.currentScreen);
+}
+
+function deleteRate(rateId){
+  const inUse = state.seats.some(s=>s.rateId===rateId);
+  if(inUse){alert('This rate is used by one or more seats. Reassign seats first.');return;}
+  if(!confirm('Delete this rate?')) return;
+  state.rates = state.rates.filter(r=>r.id!==rateId);
+  save();
+  renderSettings();
+}
+
+function clearHistory(){
+  if(!confirm('Clear all session history? This cannot be undone.')) return;
+  state.sessions = [];
+  save();
+  renderSettings();
+}
+// ─── End of Day Print Action ──────────────────────────────────────────────
+async function printEndOfDayReport() {
+  if (!window.printer?.isConnected) {
+    alert('Printer not connected. Please go to the Printer tab and connect first.');
+    return;
+  }
+
+  // Filter out only sessions that ended today
+  const now = new Date();
+  const todaySessions = state.sessions.filter(s => {
+    const d = new Date(s.endTime);
+    return d.toDateString() === now.toDateString();
+  });
+
+  if (todaySessions.length === 0) {
+    alert('No sessions completed today yet!');
+    return;
+  }
+
+  // Calculate the totals
+  const totalRev = todaySessions.reduce((a, s) => a + s.bill, 0);
+  const totalHrs = todaySessions.reduce((a, s) => a + s.elapsed, 0);
+
+  // Package the data for the printer
+  const eodData = {
+    shopName: printerSettings.shopName,
+    date: now.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }),
+    time: now.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' }),
+    totalSessions: todaySessions.length,
+    totalHours: totalHrs.toFixed(1),
+    totalRevenue: totalRev,
+    cashier: printerSettings.cashier
+  };
+
+  try {
+    await window.printer.printEOD(eodData);
+    // Show a small success toast
+    const toast = document.createElement('div');
+    toast.textContent = '✅ EOD Report Printed!';
+    toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--accent);color:#0f1923;padding:8px 20px;border-radius:20px;font-weight:800;font-size:13px;z-index:300;pointer-events:none;';
+    document.body.appendChild(toast);
+    setTimeout(()=>toast.remove(), 1800);
+  } catch(e) {
+    alert('Print failed: ' + e.message);
+  }
+}
+
+
+// ─── Printer State ────────────────────────────────────────────────────────────
+let printerSettings = DB.get('sh_printer', {
+  paperWidth: 80,
+  shopName: 'StudyHub',
+  shopTagline: 'Co-working & Study Space',
+  shopAddress: '',
+  shopPhone: '',
+  cashier: 'Staff',
+  footerNote: 'Thank you for using StudyHub!',
+  connMethod: 'usb',
+  lanIp: '',
+  lanPort: 9100,
+  laBridgePort: 8765,
+  autoPrint: true,
+});
+let printerLog = [];
+
+function savePrinterSettings(){DB.set('sh_printer', printerSettings);}
+
+// Setup printer engine callbacks
+function initPrinterEngine(){
+  if(!window.printer) return;
+  window.printer.setPaperWidth(printerSettings.paperWidth);
+  window.printer.onStatus = (msg, level) => {
+    addPrinterLog(msg, level);
+    const statusEl = document.getElementById('pr-status-text');
+    const dotEl = document.getElementById('pr-status-dot');
+    if(statusEl) statusEl.textContent = msg;
+    if(dotEl){
+      dotEl.className = 'printer-dot ' + (level==='success'?'connected':level==='warn'?'connecting':level==='error'?'error':'connecting');
+    }
+  };
+  window.printer.onConnected = (type, name) => {
+    addPrinterLog(`Connected via ${type}: ${name||''}`, 'success');
+    renderPrinterStatus();
+  };
+  window.printer.onDisconnected = () => {
+    addPrinterLog('Printer disconnected', 'warn');
+    renderPrinterStatus();
+  };
+}
+
+function addPrinterLog(msg, level='info'){
+  const time = new Date().toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  printerLog.unshift({time, msg, level});
+  if(printerLog.length > 30) printerLog.pop();
+  const logEl = document.getElementById('pr-log');
+  if(logEl) renderPrinterLog(logEl);
+}
+
+function renderPrinterLog(el){
+  el.innerHTML = printerLog.map(l=>
+    `<div class="log-${l.level}">[${l.time}] ${l.msg}</div>`
+  ).join('');
+}
+
+function renderPrinterStatus(){
+  const statusBar = document.getElementById('pr-statusbar');
+  if(!statusBar) return;
+  const connected = window.printer?.isConnected;
+  const connType = window.printer?.connType;
+  statusBar.innerHTML = `
+    <div class="printer-dot ${connected?'connected':'disconnected'}" id="pr-status-dot"></div>
+    <div style="flex:1;">
+      <div class="printer-status-text" id="pr-status-text">${connected?`Connected via ${connType}`:'Not connected'}</div>
+      <div class="printer-status-sub">${connected?`Paper: ${printerSettings.paperWidth}mm · ${window.printer.chars} chars/line`:'Select connection method below'}</div>
+    </div>
+    ${connected?`<button class="btn btn-danger btn-sm" onclick="printerDisconnect()">Disconnect</button>`:''}
+  `;
+}
+
+// ─── Printer Screen ────────────────────────────────────────────────────────────
+function renderPrinterScreen(){
+  const el = document.getElementById('printer-content');
+  const connected = window.printer?.isConnected;
+  el.innerHTML = `
+    <!-- Status Bar -->
+    <div class="printer-status-bar" id="pr-statusbar"></div>
+
+    <!-- Paper Width -->
+    <div class="sec-heading">Paper Width</div>
+    <div class="paper-toggle" style="margin-bottom:14px;">
+      <button class="paper-btn ${printerSettings.paperWidth===58?'active':''}" onclick="setPaperWidth(58)">58mm (32 chars)</button>
+      <button class="paper-btn ${printerSettings.paperWidth===80?'active':''}" onclick="setPaperWidth(80)">80mm (48 chars)</button>
+    </div>
+
+    <div class="sec-heading">Platform Selection</div>
+<div class="paper-toggle" style="margin-bottom:14px;">
+  <button class="paper-btn ${printerSettings.platform==='android'?'active':''}" 
+          onclick="setPrinterPlatform('android')">📱 Android</button>
+  <button class="paper-btn ${printerSettings.platform==='windows'?'active':''}" 
+          onclick="setPrinterPlatform('windows')">🖥️ Windows</button>
+</div>
+
+    <!-- Connection Method -->
+    <div class="sec-heading">Connection Method</div>
+    <div class="conn-method-grid">
+        ${getConnectionMethods().map(method => `
+        <div class="conn-method-btn ${printerSettings.connMethod===method?'selected':''}" 
+        onclick="setConnMethod('${method}')">
+        <span class="cm-icon">${method==='usb'?'🔌':method==='bluetooth'?'📶':'🌐'}</span>
+        <span class="cm-label">${method.toUpperCase()}</span>
+        <span class="cm-sub">${method==='usb'?'Direct Cable':method==='bluetooth'?'Wireless':'Network'}</span>
+    </div>
+  `).join('')}
+</div>
+      <div class="conn-method-btn ${printerSettings.connMethod==='bluetooth'?'selected':''}" onclick="setConnMethod('bluetooth')">
+        <span class="cm-icon">📶</span>
+        <span class="cm-label">Bluetooth</span>
+        <span class="cm-sub">BLE / Classic</span>
+      </div>
+      <div class="conn-method-btn ${printerSettings.connMethod==='lan'?'selected':''}" onclick="setConnMethod('lan')">
+        <span class="cm-icon">🌐</span>
+        <span class="cm-label">LAN / WiFi</span>
+        <span class="cm-sub">TCP Port 9100</span>
+      </div>
+    </div>
+
+    <!-- LAN Config (only shown when LAN selected) -->
+    ${printerSettings.connMethod==='lan'?`
+      <div class="card" style="padding:14px;margin-bottom:14px;">
+        <div style="font-size:12px;color:var(--warn);margin-bottom:10px;">⚠️ LAN requires the <b>ws-bridge.js</b> script running on a PC on the same network.</div>
+        <div class="form-group">
+          <label class="form-label">Printer IP Address</label>
+          <input class="form-input" id="lan-ip" value="${printerSettings.lanIp}" placeholder="e.g. 192.168.1.100"/>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Printer Port</label>
+            <input class="form-input" id="lan-port" type="number" value="${printerSettings.lanPort}"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Bridge Port</label>
+            <input class="form-input" id="lan-bridge-port" type="number" value="${printerSettings.laBridgePort}"/>
+          </div>
+        </div>
+        <button class="btn btn-secondary btn-full" onclick="saveLanConfig()">Save LAN Config</button>
+      </div>
+    `:''}
+
+    <!-- USB note -->
+    ${printerSettings.connMethod==='usb'?`
+      <div class="card" style="padding:12px 14px;margin-bottom:14px;font-size:12px;color:var(--text2);">
+        📱 Connect your thermal printer to your Android device using a <b>USB OTG adapter/cable</b>. Then tap Connect below. Chrome will show a device picker.
+      </div>
+    `:''}
+
+    <!-- BT note -->
+    ${printerSettings.connMethod==='bluetooth'?`
+      <div class="card" style="padding:12px 14px;margin-bottom:14px;font-size:12px;color:var(--text2);">
+        📶 Make sure your Bluetooth printer is <b>powered on and in pairing mode</b>. Tap Connect below — Chrome will scan for nearby devices. Works with most 58mm/80mm BLE printers.
+      </div>
+    `:''}
+
+    <!-- Connect Button -->
+    ${!connected?`
+      <button class="btn btn-primary btn-full" style="margin-bottom:14px;" onclick="printerConnect()">
+        ${printerSettings.connMethod==='usb'?'🔌 Connect via USB':printerSettings.connMethod==='bluetooth'?'📶 Connect via Bluetooth':'🌐 Connect via LAN'}
+      </button>
+    `:`
+      <div class="print-btn-bar" style="margin-bottom:14px;">
+        <button class="btn btn-secondary" style="flex:1;" onclick="printerTestPrint()">🖨️ Test Print</button>
+        <button class="btn btn-danger" onclick="printerDisconnect()">Disconnect</button>
+      </div>
+    `}
+
+    <!-- Receipt Settings -->
+    <div class="sec-heading">Receipt Settings</div>
+    <div class="card" style="padding:14px;margin-bottom:14px;">
+      <div class="form-group">
+        <label class="form-label">Shop Name</label>
+        <input class="form-input" id="pr-shop-name" value="${printerSettings.shopName}" placeholder="StudyHub"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tagline</label>
+        <input class="form-input" id="pr-tagline" value="${printerSettings.shopTagline}" placeholder="Co-working & Study Space"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Address</label>
+        <input class="form-input" id="pr-address" value="${printerSettings.shopAddress}" placeholder="e.g. 123 Rizal St, Manila"/>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Phone</label>
+          <input class="form-input" id="pr-phone" value="${printerSettings.shopPhone}" placeholder="+63 9XX XXX XXXX"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Default Cashier</label>
+          <input class="form-input" id="pr-cashier" value="${printerSettings.cashier}" placeholder="Staff"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Footer Note</label>
+        <input class="form-input" id="pr-footer" value="${printerSettings.footerNote}" placeholder="Thank you!"/>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <label class="form-label" style="margin:0;">Auto-print on checkout</label>
+        <div onclick="toggleAutoPrint()" style="cursor:pointer;width:42px;height:24px;border-radius:12px;background:${printerSettings.autoPrint?'var(--accent)':'var(--border)'};position:relative;transition:background 0.2s;">
+          <div style="position:absolute;top:3px;left:${printerSettings.autoPrint?'21px':'3px'};width:18px;height:18px;border-radius:50%;background:#fff;transition:left 0.2s;"></div>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-full mt-12" onclick="saveReceiptSettings()">Save Receipt Settings</button>
+    </div>
+
+    <!-- Printer Log -->
+    <div class="sec-heading">Printer Log</div>
+    <div class="printer-log" id="pr-log"></div>
+    <div style="height:20px;"></div>
+  `;
+  renderPrinterStatus();
+  const logEl = document.getElementById('pr-log');
+  if(logEl) renderPrinterLog(logEl);
+}
+
+function setPaperWidth(mm){
+  printerSettings.paperWidth = mm;
+  savePrinterSettings();
+  if(window.printer) window.printer.setPaperWidth(mm);
+  renderPrinterScreen();
+}
+
+function setConnMethod(m){
+  printerSettings.connMethod = m;
+  savePrinterSettings();
+  renderPrinterScreen();
+}
+
+function saveLanConfig(){
+  printerSettings.lanIp = document.getElementById('lan-ip')?.value?.trim() || '';
+  printerSettings.lanPort = parseInt(document.getElementById('lan-port')?.value) || 9100;
+  printerSettings.laBridgePort = parseInt(document.getElementById('lan-bridge-port')?.value) || 8765;
+  savePrinterSettings();
+  addPrinterLog('LAN config saved', 'success');
+}
+
+function saveReceiptSettings(){
+  printerSettings.shopName = document.getElementById('pr-shop-name')?.value?.trim() || 'StudyHub';
+  printerSettings.shopTagline = document.getElementById('pr-tagline')?.value?.trim() || '';
+  printerSettings.shopAddress = document.getElementById('pr-address')?.value?.trim() || '';
+  printerSettings.shopPhone = document.getElementById('pr-phone')?.value?.trim() || '';
+  printerSettings.cashier = document.getElementById('pr-cashier')?.value?.trim() || 'Staff';
+  printerSettings.footerNote = document.getElementById('pr-footer')?.value?.trim() || '';
+  savePrinterSettings();
+  addPrinterLog('Receipt settings saved', 'success');
+  // Show small toast
+  const toast = document.createElement('div');
+  toast.textContent = '✅ Saved!';
+  toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--accent);color:#0f1923;padding:8px 20px;border-radius:20px;font-weight:800;font-size:13px;z-index:300;pointer-events:none;';
+  document.body.appendChild(toast);
+  setTimeout(()=>toast.remove(), 1800);
+}
+
+function toggleAutoPrint(){
+  printerSettings.autoPrint = !printerSettings.autoPrint;
+  savePrinterSettings();
+  renderPrinterScreen();
+}
+
+async function printerConnect(){
+  if(!window.printer){ addPrinterLog('Printer engine not loaded', 'error'); return; }
+  const btn = document.querySelector('.btn-primary');
+  if(btn){ btn.disabled=true; btn.textContent='Connecting…'; }
+  try {
+    const m = printerSettings.connMethod;
+    if(m==='usb'){
+      await window.printer.connectUSB();
+    } else if(m==='bluetooth'){
+      await window.printer.connectBluetooth();
+    } else if(m==='lan'){
+      saveLanConfig();
+      if(!printerSettings.lanIp){ addPrinterLog('Enter printer IP address first', 'error'); return; }
+      await window.printer.connectLAN(printerSettings.lanIp, printerSettings.lanPort, printerSettings.laBridgePort);
+    }
+    renderPrinterScreen();
+  } catch(e){
+    addPrinterLog('Connection failed: ' + e.message, 'error');
+    renderPrinterScreen();
+  }
+}
+
+async function printerDisconnect(){
+  if(!window.printer) return;
+  await window.printer.disconnect();
+  renderPrinterScreen();
+}
+
+async function printerTestPrint(){
+  if(!window.printer?.isConnected){
+    addPrinterLog('Not connected — go to Printer tab to connect', 'warn');
+    if(state.currentScreen !== 'printer') navigate('printer');
+    return;
+  }
+  try {
+    await window.printer.printTest();
+  } catch(e){
+    addPrinterLog('Print error: ' + e.message, 'error');
+  }
+}
+
+// ─── Print Receipt ─────────────────────────────────────────────────────────────
+async function printSessionReceipt(sessionRecord) {
+  if (!window.printer?.isConnected) {
+    console.warn('Printer not connected');
+    return;
+  }
+  
+  try {
+    const data = {
+      shopName: printerSettings.shopName,
+      shopTagline: printerSettings.shopTagline,
+      shopAddress: printerSettings.shopAddress,
+      shopPhone: printerSettings.shopPhone,
+      receiptNo: sessionRecord.id.slice(0, 8),
+      date: new Date(sessionRecord.endTime).toLocaleDateString('en-PH'),
+      time: new Date(sessionRecord.endTime).toLocaleTimeString('en-PH', {hour: '2-digit', minute: '2-digit'}),
+      seat: sessionRecord.seatName,
+      customer: sessionRecord.user,
+      duration: `${(sessionRecord.elapsed * 60).toFixed(0)} minutes`,
+      originalBill: sessionRecord.originalBill || sessionRecord.bill,
+      discount: sessionRecord.discountAmount || 0,
+      total: sessionRecord.finalTotal || sessionRecord.bill,
+      paymentType: sessionRecord.paymentTypeName,
+      amountReceived: sessionRecord.amountReceived || 0,
+      change: sessionRecord.change || 0,
+      cashier: sessionRecord.handledBy || 'Staff',
+      footerNote: printerSettings.footerNote
+    };
+    
+    await window.printer.printReceipt(data);
+  } catch(e) {
+    console.error('Print error:', e);
+    addPrinterLog('Print failed: ' + e.message, 'error');
+  }
+}
+
+// ─── PWA Install ──────────────────────────────────────────────────────────
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('install-banner').style.display = 'flex';
+});
+document.getElementById('install-btn').addEventListener('click', async () => {
+  if(!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const {outcome} = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  document.getElementById('install-banner').style.display = 'none';
+});
+window.addEventListener('appinstalled', () => {
+  document.getElementById('install-banner').style.display = 'none';
+});
+
+// ─── Service Worker ───────────────────────────────────────────────────────
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('/sw.js').catch(()=>{});
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────
+initPrinterEngine();
+renderDashboard();
+
+// ===== REPORTS =====
+function generateDailyReport() {
+  const sessions = state.sessions.filter(s => s.endTime);
+  const reportDate = new Date().toLocaleDateString();
+  
+  let html = `
+    <h2>End of Day Report</h2>
+    <p>Date: ${reportDate}</p>
+    
+    <h3>Summary</h3>
+    <p>Total Sessions: ${sessions.length}</p>
+    <p>Total Revenue: ₱${sessions.reduce((sum, s) => sum + s.bill, 0).toFixed(2)}</p>
+    
+    <h3>Payment Methods</h3>
+    <table class="report-table">
+      ${state.paymentTypes.map(payment => `
+        <tr>
+          <td>${payment.name}</td>
+          <td>₱${sessions.filter(s => s.paymentType === payment.id)
+                       .reduce((sum, s) => sum + s.bill, 0)
+                       .toFixed(2)}</td>
+        </tr>
+      `).join('')}
+    </table>
+  `;
+  
+  const win = window.open('', '_blank');
+  win.document.write(`
+    <html>
+      <head>
+        <title>Daily Report - ${reportDate}</title>
+        <style>
+          body { font-family: Arial; padding: 20px; }
+          h2 { color: #333; }
+          .report-table { border-collapse: collapse; width: 100%; }
+          .report-table td { padding: 8px; border-bottom: 1px solid #ddd; }
+        </style>
+      </head>
+      <body>${html}</body>
+    </html>
+  `);
+  win.document.close();
+  win.print();
+}
+
+function setPrinterPlatform(platform) {
+  printerSettings.platform = platform;
+  savePrinterSettings();
+  renderPrinterScreen();
+}
+
+function getConnectionMethods() {
+  return printerSettings.platform === 'android' 
+    ? ['usb', 'bluetooth'] 
+    : ['lan', 'usb'];
+}
+</script>
+</body>
+</html>

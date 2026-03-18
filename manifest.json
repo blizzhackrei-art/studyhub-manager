@@ -1,0 +1,16 @@
+{
+  "name": "StudyHub Manager",
+  "short_name": "StudyHub",
+  "description": "Co-working Space & Study Hub Timer Management System",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0f1923",
+  "theme_color": "#00c896",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "categories": ["business", "productivity"],
+  "lang": "en-PH"
+}
