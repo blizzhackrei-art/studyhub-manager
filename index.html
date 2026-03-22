@@ -347,6 +347,41 @@ input,select{font-family:var(--font);outline:none;}
 .mono{font-family:var(--mono);}
 .text-center{text-align:center;}
 
+/* ── Voucher System ── */
+.voucher-pool-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:10px;transition:border-color 0.2s;}
+.voucher-pool-card.low{border-color:rgba(245,158,11,0.5);}
+.voucher-pool-card.empty{border-color:rgba(239,68,68,0.4);}
+.voucher-pool-header{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);}
+.voucher-pool-title{font-size:14px;font-weight:800;}
+.voucher-pool-meta{font-size:11px;color:var(--text3);margin-top:2px;}
+.voucher-pool-body{padding:12px 14px;}
+.voucher-progress{height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;margin:8px 0;}
+.voucher-progress-fill{height:100%;border-radius:3px;transition:width 0.5s ease;}
+.voucher-code-display{
+  background:var(--surface2);border:2px dashed var(--accent);border-radius:var(--radius);
+  padding:16px;text-align:center;margin:12px 0;
+}
+.voucher-code-label{font-size:11px;color:var(--text3);font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
+.voucher-code-value{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--accent);letter-spacing:3px;}
+.voucher-code-sub{font-size:11px;color:var(--text2);margin-top:6px;}
+.voucher-code-none{font-size:13px;color:var(--text3);padding:12px;}
+.voucher-import-area{width:100%;min-height:100px;padding:10px 12px;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:var(--mono);font-size:12px;resize:vertical;line-height:1.6;}
+.voucher-import-area:focus{border-color:var(--accent);}
+.voucher-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:800;font-family:var(--mono);}
+.voucher-badge.ok{background:rgba(0,200,150,0.12);color:var(--accent);}
+.voucher-badge.low{background:rgba(245,158,11,0.12);color:var(--warn);}
+.voucher-badge.empty{background:rgba(239,68,68,0.12);color:var(--red);}
+.voucher-used-list{max-height:160px;overflow-y:auto;background:var(--surface2);border-radius:var(--radius-sm);padding:4px 0;}
+.voucher-used-item{display:flex;justify-content:space-between;align-items:center;padding:6px 12px;font-size:11px;border-bottom:1px solid var(--border);}
+.voucher-used-item:last-child{border-bottom:none;}
+.voucher-used-code{font-family:var(--mono);color:var(--text3);text-decoration:line-through;}
+.voucher-used-meta{font-size:10px;color:var(--text3);}
+.wifi-slip-preview{background:#fff;color:#000;border-radius:var(--radius);padding:16px;font-family:'Courier New',monospace;font-size:12px;border:2px solid var(--border);margin:8px 0;}
+.wifi-slip-preview .ws-title{font-size:16px;font-weight:700;text-align:center;letter-spacing:2px;margin-bottom:4px;}
+.wifi-slip-preview .ws-divider{border-top:1px dashed #000;margin:8px 0;}
+.wifi-slip-preview .ws-code{font-size:22px;font-weight:700;text-align:center;letter-spacing:4px;padding:8px 0;}
+.wifi-slip-preview .ws-row{display:flex;justify-content:space-between;font-size:11px;margin:3px 0;}
+
 /* ── Session History Filter Bar ── */
 .hist-filter-bar{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
 .hist-filter-bar .form-select{font-size:13px;padding:9px 12px;}
@@ -470,6 +505,7 @@ input,select{font-family:var(--font);outline:none;}
   <div id="screen-reports" class="screen"><div class="scroll-area" id="reports-content"></div></div>
   <div id="screen-settings" class="screen"><div class="scroll-area" id="settings-content"></div></div>
   <div id="screen-printer" class="screen"><div class="scroll-area" id="printer-content"></div></div>
+  <div id="screen-vouchers" class="screen"><div class="scroll-area" id="vouchers-content"></div></div>
 
   <!-- Bottom Nav -->
   <nav class="bottom-nav" id="bottom-nav">
@@ -478,7 +514,7 @@ input,select{font-family:var(--font);outline:none;}
     <div class="nav-tab" data-screen="sessions"><span class="icon">⏱</span><span class="label">Sessions</span></div>
     <div class="nav-tab" data-screen="reports"><span class="icon">📊</span><span class="label">Reports</span></div>
     <div class="nav-tab" data-screen="settings"><span class="icon">⚙️</span><span class="label">Settings</span></div>
-    <div class="nav-tab" data-screen="printer"><span class="icon">🖨️</span><span class="label">Printer</span></div>
+    <div class="nav-tab" data-screen="vouchers"><span class="icon">🎟️</span><span class="label">Vouchers</span><span class="nav-badge" id="voucher-low-badge" style="display:none;">!</span></div>
   </nav>
 </div>
 </div>
@@ -1492,11 +1528,12 @@ setInterval(() => {
 }, 1000);
 
 // ─── Navigation ───────────────────────────────────────────────────────────────
-const SCREENS = ['dashboard','seats','sessions','reports','settings','printer'];
+const SCREENS = ['dashboard','seats','sessions','reports','settings','printer','vouchers'];
 const NAV_LABELS = {
   dashboard:{icon:'⊞',label:'Dashboard'},seats:{icon:'🪑',label:'Seats'},
   sessions:{icon:'⏱',label:'Sessions'},reports:{icon:'📊',label:'Reports'},
-  settings:{icon:'⚙️',label:'Settings'},printer:{icon:'🖨️',label:'Printer'}
+  settings:{icon:'⚙️',label:'Settings'},printer:{icon:'🖨️',label:'Printer'},
+  vouchers:{icon:'🎟️',label:'Vouchers'}
 };
 
 function navigate(screen) {
@@ -1510,6 +1547,7 @@ function navigate(screen) {
   if(screen==='seats'){ab.style.display='flex';ab.textContent='+ Seat';ab.onclick=()=>openSeatForm();}
   else if(screen==='settings'){ab.style.display='flex';ab.textContent='+ Rate';ab.onclick=()=>openRateForm();}
   else if(screen==='printer'){ab.style.display='flex';ab.textContent='🖨️ Test';ab.onclick=()=>printerTestPrint();}
+  else if(screen==='vouchers'){ab.style.display='flex';ab.textContent='+ Import';ab.onclick=()=>openVoucherImport();}
   else ab.style.display='none';
   renderScreen(screen);
 }
@@ -1524,6 +1562,7 @@ function buildSidebar() {
       <span style="font-size:18px;">${NAV_LABELS[s].icon}</span>
       <span>${NAV_LABELS[s].label}</span>
       ${s==='seats'?`<span class="sidebar-badge" style="display:none;" id="sb-occ"></span>`:''}
+      ${s==='vouchers'?`<span class="sidebar-badge" id="sb-voucher-low" style="display:none;">!</span>`:''}
     </div>
   `).join('');
 }
@@ -1541,6 +1580,7 @@ function renderScreen(s) {
   else if(s==='reports') renderReports();
   else if(s==='settings') renderSettings();
   else if(s==='printer') renderPrinterScreen();
+  else if(s==='vouchers') renderVouchersScreen();
 }
 
 // ── DASHBOARD ────────────────────────────────────────────────────────────────
@@ -2324,6 +2364,12 @@ function openSeatDetail(seat) {
 function openStartSession(seatId) {
   const seat = state.seats.find(s=>s.id===seatId);
   if(!seat) return;
+  const pool = getVoucherPool(seat.type);
+  const available = pool ? pool.vouchers.filter(v=>v.status==='available').length : 0;
+  const hasPool = !!pool;
+  const lowStock = hasPool && available <= 20 && available > 0;
+  const noStock = hasPool && available === 0;
+
   closeDrawer();
   setTimeout(()=>{
     openDrawer(`
@@ -2331,6 +2377,25 @@ function openStartSession(seatId) {
       <div style="background:var(--accent-dim);border:1px solid rgba(0,200,150,0.2);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:16px;font-size:13px;">
         <b>${seat.name}</b> · ${seat.type}
       </div>
+
+      ${hasPool ? `
+        <div class="info-box ${noStock?'warn':lowStock?'warn':'accent'}" style="margin-bottom:14px;display:flex;align-items:center;gap:10px;">
+          <span style="font-size:20px;">${noStock?'❌':lowStock?'⚠️':'📶'}</span>
+          <div>
+            <strong>WiFi Voucher Pool</strong><br>
+            ${noStock
+              ? `<span style="color:var(--red);">No vouchers available! Add more in the Vouchers tab.</span>`
+              : `${available} voucher${available!==1?'s':''} available for <b>${seat.type}</b>${lowStock?' · <span style="color:var(--warn);">Running low!</span>':''}`
+            }
+          </div>
+        </div>
+      ` : `
+        <div class="info-box" style="margin-bottom:14px;">
+          <span style="font-size:16px;">📶</span> No voucher pool set up for <b>${seat.type}</b>.
+          <span style="color:var(--accent);cursor:pointer;" onclick="closeDrawer();navigate('vouchers')"> Set up now →</span>
+        </div>
+      `}
+
       <div class="form-group">
         <label class="form-label">Customer Name or ID</label>
         <input class="form-input" id="start-user" placeholder="e.g. Maria Santos" autocomplete="off"/>
@@ -2357,6 +2422,19 @@ function openStartSession(seatId) {
           Timer counts down. Seat auto-flags when time expires.
         </div>
       </div>
+
+      ${hasPool && !noStock ? `
+        <div class="info-box accent" style="margin-top:8px;margin-bottom:4px;">
+          🎟️ A WiFi voucher will be <strong>automatically assigned</strong> when you start the session.
+        </div>
+      ` : ''}
+      ${noStock ? `
+        <div class="form-group" style="margin-top:8px;">
+          <label class="form-label">Enter Voucher Manually (optional)</label>
+          <input class="form-input" id="manual-voucher" placeholder="e.g. ABC123" autocomplete="off" style="font-family:var(--mono);letter-spacing:2px;text-transform:uppercase;"/>
+        </div>
+      ` : ''}
+
       <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
         <button class="btn btn-primary btn-full" onclick="doStartSession('${seatId}')">▶ Start Session</button>
         <button class="btn btn-secondary btn-full" onclick="closeDrawer()">Cancel</button>
@@ -2384,12 +2462,34 @@ function doStartSession(seatId) {
     if(totalMin < 1){alert('Please set at least 1 minute.');return;}
     limitMs = totalMin * 60 * 1000;
   }
+
+  // ── Voucher Assignment ──
+  const seat = state.seats.find(s=>s.id===seatId);
+  let assignedVoucher = null;
+  const manualInput = document.getElementById('manual-voucher');
+  if(manualInput && manualInput.value.trim()) {
+    // Manual entry fallback
+    assignedVoucher = manualInput.value.trim().toUpperCase();
+  } else {
+    // Auto-assign from pool
+    assignedVoucher = assignVoucherFromPool(seat.type, limitMs);
+  }
+
   const session = {id:uid(), user:name, startTime:Date.now()};
   if(limitMs) session.limitMs = limitMs;
+  if(assignedVoucher) session.wifiVoucher = assignedVoucher;
+
   state.seats = state.seats.map(s=>s.id===seatId?{...s,status:'occupied',session}:s);
   save();
+  updateVoucherBadge();
   closeDrawer();
-  renderScreen(state.currentScreen);
+
+  // Show voucher popup if assigned
+  if(assignedVoucher) {
+    setTimeout(()=>showVoucherAssigned(seat, assignedVoucher, limitMs), 300);
+  } else {
+    renderScreen(state.currentScreen);
+  }
 }
 
 function confirmEndSession(seatId) {
@@ -2551,9 +2651,10 @@ function processPayment(seatId, originalBill, elapsed) {
     rateName:rate.name,ratePerHour:rate.perHour,minCharge:rate.minCharge,
     paymentType:paymentId,paymentTypeName:paymentType.name,
     amountReceived,change,
-    handledBy:state.currentUser?.name||'Staff'
+    handledBy:state.currentUser?.name||'Staff',
+    wifiVoucher: seat.session.wifiVoucher || null,
   };
-  state.sessions = [record,...state.sessions];
+  pushSessionAndMarkVoucher(record);
   state.seats = state.seats.map(s=>s.id===seatId?{...s,status:'available',session:null}:s);
   save();
   closeDrawer();
@@ -2564,6 +2665,7 @@ function showReceipt(rec) {
   window._lastRec = rec;
   const durStr = fmtTime(Math.round(rec.elapsed*3600));
   const receiptNo = rec.receiptNo || rec.id.slice(0,8);
+  const hasVoucher = !!rec.wifiVoucher;
   openDrawer(`
     <div class="drawer-title">📃 Receipt</div>
     <div class="receipt">
@@ -2578,9 +2680,19 @@ function showReceipt(rec) {
       ${rec.paymentType==='cash'?`<div class="receipt-row"><span class="lbl">Received</span><span class="val">₱${(rec.amountReceived||0).toFixed(2)}</span></div><div class="receipt-row"><span class="lbl">Change</span><span class="val">₱${(rec.change||0).toFixed(2)}</span></div>`:''}
       <div class="receipt-row"><span class="lbl">Staff</span><span class="val">${rec.handledBy||'System'}</span></div>
     </div>
+    ${hasVoucher ? `
+      <div class="voucher-code-display" style="margin-bottom:4px;">
+        <div class="voucher-code-label">📶 WiFi Voucher Code</div>
+        <div class="voucher-code-value">${rec.wifiVoucher}</div>
+        <div class="voucher-code-sub">Connect to WiFi → enter this code</div>
+      </div>
+    ` : ''}
     <div style="text-align:center;font-size:12px;color:var(--text3);margin:12px 0 16px;">Thank you for using StudyHub! 📚</div>
-    <div style="display:flex;gap:8px;">
-      ${isPrinterReady()?`<button class="btn btn-secondary" style="flex:1;" onclick="printSessionReceipt(window._lastRec)">🖨️ Print</button>`:''}
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      ${isPrinterReady()?`
+        <button class="btn btn-secondary" style="flex:1;" onclick="printSessionReceipt(window._lastRec)">🖨️ Receipt</button>
+        ${hasVoucher?`<button class="btn btn-secondary" style="flex:1;" onclick="printWifiSlip(window._lastRec)">📶 WiFi Slip</button>`:''}
+      `:''}
       <button class="btn btn-primary" style="flex:1;" onclick="closeDrawer();renderScreen(state.currentScreen);">Done</button>
     </div>
   `);
@@ -2732,6 +2844,7 @@ function doBackup() {
       paymentTypes: state.paymentTypes,
       users: getUsers(),
       printerSettings,
+      voucherPools: getVoucherPools(),
       txnCounter: DB.get('sh_txn_counter', 0),
     }
   };
@@ -2806,6 +2919,7 @@ function doRestore() {
   if (d.paymentTypes)   { state.paymentTypes = d.paymentTypes; savePaymentTypes(d.paymentTypes); }
   if (d.users)          { saveUsers(d.users); renderLoginUsers(); }
   if (d.printerSettings){ Object.assign(printerSettings, d.printerSettings); savePrinterSettings(); }
+  if (d.voucherPools)   { saveVoucherPools(d.voucherPools); }
   if (d.txnCounter)     { DB.set('sh_txn_counter', d.txnCounter); _txnCounter = d.txnCounter; }
   closeCenterModal();
   showToast('✅ Restore complete!');
@@ -3281,6 +3395,13 @@ ${(data.paymentType==='Cash'||data.amountReceived>0)?`
   <div class="row"><span>Received:</span><span>P${Number(data.amountReceived||0).toFixed(2)}</span></div>
   <div class="row"><span>Change:</span><span>P${Number(data.change||0).toFixed(2)}</span></div>
 </div>`:''}
+${data.wifiVoucher?`
+<div class="divider-solid"></div>
+<div class="center section">
+  <div style="font-size:${fs-1}pt;letter-spacing:1.5px;font-weight:700;">📶 WiFi VOUCHER CODE</div>
+  <div style="font-size:${fs+8}pt;font-weight:700;letter-spacing:4px;margin:4px 0;">${data.wifiVoucher}</div>
+  <div style="font-size:${fs-2}pt;">Connect to WiFi · Enter code above</div>
+</div>`:''}
 <div class="divider-solid"></div>
 <div class="center section" style="font-size:${fs-1}pt;">
   ${data.footerNote?`<div>${data.footerNote}</div>`:''}
@@ -3416,7 +3537,8 @@ async function printSessionReceipt(rec) {
     originalBill:rec.originalBill||rec.bill, discount:rec.discountAmount||0,
     total:rec.finalTotal||rec.bill, paymentType:rec.paymentTypeName,
     amountReceived:rec.amountReceived||0, change:rec.change||0,
-    cashier:rec.handledBy||'Staff', footerNote:printerSettings.footerNote
+    cashier:rec.handledBy||'Staff', footerNote:printerSettings.footerNote,
+    wifiVoucher: rec.wifiVoucher || null,
   };
   if (isDialogMode()) {
     openPrintWindow(buildReceiptHTML(receiptData));
@@ -3483,6 +3605,417 @@ function showToast(msg) {
   setTimeout(()=>t.remove(),2000);
 }
 
+// ═══════════════════ VOUCHER SYSTEM ════════════════════════════════════════════
+
+// ── Storage helpers ───────────────────────────────────────────────────────────
+function getVoucherPools() {
+  return DB.get('sh_voucher_pools', []);
+}
+function saveVoucherPools(pools) {
+  DB.set('sh_voucher_pools', pools);
+  if(window.FirebaseDB?.configured) {
+    pools.forEach(p => window.FirebaseDB.set('voucher_pools', p.seatType.replace(/\s+/g,'_'), p));
+  }
+}
+function getVoucherPool(seatType) {
+  return getVoucherPools().find(p => p.seatType === seatType) || null;
+}
+
+// ── Auto-assign voucher from pool ─────────────────────────────────────────────
+function assignVoucherFromPool(seatType, limitMs) {
+  const pools = getVoucherPools();
+  const poolIdx = pools.findIndex(p => p.seatType === seatType);
+  if(poolIdx === -1) return null;
+  const pool = pools[poolIdx];
+  const availIdx = pool.vouchers.findIndex(v => v.status === 'available');
+  if(availIdx === -1) return null;
+  const voucher = pool.vouchers[availIdx];
+  pools[poolIdx].vouchers[availIdx] = {
+    ...voucher,
+    status: 'in-use',
+    assignedAt: Date.now(),
+    limitMs: limitMs || null,
+  };
+  saveVoucherPools(pools);
+  updateVoucherBadge();
+  return voucher.code;
+}
+
+// ── Mark voucher as used when session ends ────────────────────────────────────
+function markVoucherUsed(seatType, code) {
+  if(!code) return;
+  const pools = getVoucherPools();
+  const poolIdx = pools.findIndex(p => p.seatType === seatType);
+  if(poolIdx === -1) return;
+  const vIdx = pools[poolIdx].vouchers.findIndex(v => v.code === code);
+  if(vIdx === -1) return;
+  pools[poolIdx].vouchers[vIdx] = {
+    ...pools[poolIdx].vouchers[vIdx],
+    status: 'used',
+    usedAt: Date.now(),
+  };
+  saveVoucherPools(pools);
+}
+
+// Hook into session end to mark voucher used
+const _origProcessPayment = processPayment;
+// We patch after save — voucher is marked used after processPayment completes
+// We do this by wrapping the save() call context — instead we call markVoucherUsed
+// inside processPayment directly (see updated processPayment above via wifiVoucher on record)
+// So we listen for new sessions being added to mark the voucher used:
+function onSessionSaved(rec) {
+  if(rec.wifiVoucher && rec.seatType) {
+    markVoucherUsed(rec.seatType, rec.wifiVoucher);
+  }
+}
+
+// ── Voucher badge updater ─────────────────────────────────────────────────────
+function updateVoucherBadge() {
+  const pools = getVoucherPools();
+  const lowCount = pools.filter(p => {
+    const avail = p.vouchers.filter(v=>v.status==='available').length;
+    return avail <= 20;
+  }).length;
+  const badge = document.getElementById('voucher-low-badge');
+  const navBadge = document.getElementById('voucher-low-badge');
+  if(badge) { badge.style.display = lowCount > 0 ? 'flex' : 'none'; }
+}
+
+// ── Show voucher assigned popup after session starts ──────────────────────────
+function showVoucherAssigned(seat, voucherCode, limitMs) {
+  const durationStr = limitMs
+    ? fmtTime(Math.floor(limitMs/1000))
+    : 'Open session';
+  openDrawer(`
+    <div class="drawer-title">🎟️ Session Started!</div>
+    <div style="background:var(--accent-dim);border:1px solid rgba(0,200,150,0.2);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:16px;font-size:13px;">
+      <b>${seat.name}</b> · ${seat.type} · ${durationStr}
+    </div>
+    <div class="voucher-code-display">
+      <div class="voucher-code-label">📶 WiFi Voucher Code</div>
+      <div class="voucher-code-value">${voucherCode}</div>
+      <div class="voucher-code-sub">Give this code to the customer</div>
+    </div>
+    <div class="info-box accent" style="margin-bottom:16px;">
+      <strong>Instructions for customer:</strong><br>
+      1. Connect to <strong>${printerSettings.wifiSsid||'StudyHub WiFi'}</strong><br>
+      2. Open browser → voucher page will appear<br>
+      3. Enter code: <strong style="font-family:var(--mono);letter-spacing:2px;">${voucherCode}</strong>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      ${isPrinterReady()?`<button class="btn btn-secondary" style="flex:1;" onclick="printWifiSlipDirect('${seat.name}','${voucherCode}','${durationStr}')">🖨️ Print WiFi Slip</button>`:''}
+      <button class="btn btn-primary" style="flex:1;" onclick="closeDrawer();renderScreen(state.currentScreen);">Done ✓</button>
+    </div>
+  `);
+  renderScreen(state.currentScreen);
+}
+
+// ── VOUCHER SCREEN ────────────────────────────────────────────────────────────
+function renderVouchersScreen() {
+  const pools = getVoucherPools();
+  const seatTypes = getSeatTypes();
+  const el = document.getElementById('vouchers-content');
+  const isAdmin = state.currentUser?.role === 'admin';
+
+  // Stats
+  const totalAvail = pools.reduce((a,p)=>a+p.vouchers.filter(v=>v.status==='available').length,0);
+  const totalInUse = pools.reduce((a,p)=>a+p.vouchers.filter(v=>v.status==='in-use').length,0);
+  const totalUsed  = pools.reduce((a,p)=>a+p.vouchers.filter(v=>v.status==='used').length,0);
+  const totalAll   = pools.reduce((a,p)=>a+p.vouchers.length,0);
+
+  el.innerHTML = `
+    <div class="stats-row" style="grid-template-columns:repeat(3,1fr);margin-bottom:14px;">
+      <div class="stat-card c1"><span class="stat-emoji">🟢</span><div class="stat-val" style="font-size:22px;">${totalAvail}</div><div class="stat-lbl">Available</div></div>
+      <div class="stat-card c2"><span class="stat-emoji">🔵</span><div class="stat-val" style="font-size:22px;">${totalInUse}</div><div class="stat-lbl">In Use</div></div>
+      <div class="stat-card c3"><span class="stat-emoji">⚫</span><div class="stat-val" style="font-size:22px;">${totalUsed}</div><div class="stat-lbl">Used</div></div>
+    </div>
+
+    <div class="info-box accent" style="margin-bottom:14px;">
+      <strong>How to use:</strong> Generate voucher codes in Omada → copy them → tap <strong>+ Import</strong> on any pool below → paste all codes at once. The app auto-assigns one per session.
+    </div>
+
+    <div class="sec-heading">Voucher Pools by Seat Type</div>
+
+    ${seatTypes.length === 0 ? `<div class="empty"><div class="empty-icon">🎟️</div><div class="empty-text">No seat types found. Add seat types in Settings first.</div></div>` : ''}
+
+    ${seatTypes.map(type => {
+      const pool = pools.find(p=>p.seatType===type);
+      const vouchers = pool ? pool.vouchers : [];
+      const avail = vouchers.filter(v=>v.status==='available').length;
+      const inUse = vouchers.filter(v=>v.status==='in-use').length;
+      const used  = vouchers.filter(v=>v.status==='used').length;
+      const total = vouchers.length;
+      const pct = total > 0 ? Math.round((avail/total)*100) : 0;
+      const isLow = avail <= 20 && avail > 0 && total > 0;
+      const isEmpty = total > 0 && avail === 0;
+      const fillColor = isEmpty ? 'var(--red)' : isLow ? 'var(--warn)' : 'var(--accent)';
+      const statusClass = isEmpty ? 'empty' : isLow ? 'low' : '';
+      return `
+        <div class="voucher-pool-card ${statusClass}">
+          <div class="voucher-pool-header">
+            <div>
+              <div class="voucher-pool-title">${type}</div>
+              <div class="voucher-pool-meta">${total} total · ${avail} available · ${inUse} in-use · ${used} used</div>
+            </div>
+            <div style="display:flex;gap:6px;align-items:center;">
+              ${isEmpty ? `<span class="voucher-badge empty">⚠ Empty</span>` : isLow ? `<span class="voucher-badge low">⚠ Low: ${avail}</span>` : avail > 0 ? `<span class="voucher-badge ok">✓ ${avail} ready</span>` : `<span class="voucher-badge empty">No pool</span>`}
+              ${isAdmin ? `<button class="btn btn-primary btn-sm" onclick="openVoucherImport('${type}')">+ Import</button>` : ''}
+            </div>
+          </div>
+          <div class="voucher-pool-body">
+            ${total > 0 ? `
+              <div class="voucher-progress">
+                <div class="voucher-progress-fill" style="width:${pct}%;background:${fillColor};"></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:8px;">
+                <span>${pct}% available</span>
+                <span>${avail} of ${total}</span>
+              </div>
+            ` : `<div style="font-size:12px;color:var(--text3);margin-bottom:8px;">No vouchers imported yet.</div>`}
+            ${isAdmin && total > 0 ? `
+              <div style="display:flex;gap:6px;">
+                <button class="btn btn-secondary btn-sm" onclick="toggleUsedVouchers('${type}')">View Used (${used})</button>
+                <button class="btn btn-danger btn-sm" onclick="clearUsedVouchers('${type}')">🗑 Clear Used</button>
+              </div>
+              <div id="used-list-${type.replace(/\s+/g,'-')}" style="display:none;margin-top:8px;">
+                <div class="voucher-used-list">
+                  ${vouchers.filter(v=>v.status==='used').slice(0,30).map(v=>`
+                    <div class="voucher-used-item">
+                      <span class="voucher-used-code">${v.code}</span>
+                      <span class="voucher-used-meta">${v.usedAt ? new Date(v.usedAt).toLocaleDateString('en-PH') : '—'}</span>
+                    </div>`).join('') || '<div style="padding:8px 12px;font-size:12px;color:var(--text3);">No used vouchers yet.</div>'}
+                </div>
+              </div>
+            ` : ''}
+          </div>
+        </div>`;
+    }).join('')}
+
+    ${isAdmin ? `
+      <div class="sec-heading" style="margin-top:20px;">⚙️ WiFi Settings</div>
+      <div class="card" style="padding:14px;margin-bottom:14px;">
+        <div class="form-group">
+          <label class="form-label">WiFi SSID (Network Name)</label>
+          <input class="form-input" id="wifi-ssid" value="${printerSettings.wifiSsid||''}" placeholder="e.g. StudyHub_WiFi"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">WiFi Slip Footer Note</label>
+          <input class="form-input" id="wifi-slip-note" value="${printerSettings.wifiSlipNote||'Valid for this session only.'}" placeholder="e.g. Valid for this session only."/>
+        </div>
+        <button class="btn btn-secondary btn-full" onclick="saveWifiSettings()">💾 Save WiFi Settings</button>
+      </div>
+    ` : ''}
+
+    <div style="height:20px;"></div>
+  `;
+  updateVoucherBadge();
+}
+
+function toggleUsedVouchers(type) {
+  const id = 'used-list-' + type.replace(/\s+/g,'-');
+  const el = document.getElementById(id);
+  if(el) el.style.display = el.style.display === 'none' ? '' : 'none';
+}
+
+function saveWifiSettings() {
+  printerSettings.wifiSsid = document.getElementById('wifi-ssid')?.value?.trim() || '';
+  printerSettings.wifiSlipNote = document.getElementById('wifi-slip-note')?.value?.trim() || '';
+  savePrinterSettings();
+  showToast('✅ WiFi settings saved!');
+}
+
+// ── Voucher Import Drawer ─────────────────────────────────────────────────────
+function openVoucherImport(seatType) {
+  if(!seatType) {
+    // Called from topbar — pick seat type first
+    const seatTypes = getSeatTypes();
+    openDrawer(`
+      <div class="drawer-title">🎟️ Import Vouchers</div>
+      <div class="form-group">
+        <label class="form-label">Select Seat Type</label>
+        <select class="form-select" id="vi-type">
+          ${seatTypes.map(t=>`<option value="${t}">${t}</option>`).join('')}
+        </select>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="openVoucherImportStep2(document.getElementById('vi-type').value)">Next →</button>
+    `);
+    return;
+  }
+  openVoucherImportStep2(seatType);
+}
+
+function openVoucherImportStep2(seatType) {
+  const pool = getVoucherPool(seatType);
+  const existing = pool ? pool.vouchers.filter(v=>v.status==='available').length : 0;
+  closeDrawer();
+  setTimeout(()=>{
+    openDrawer(`
+      <div class="drawer-title">📥 Import Vouchers</div>
+      <div style="background:var(--accent-dim);border:1px solid rgba(0,200,150,0.2);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:16px;font-size:13px;">
+        Pool: <b>${seatType}</b> · ${existing} currently available
+      </div>
+      <div class="info-box" style="margin-bottom:12px;">
+        <strong>How to get voucher codes from Omada:</strong><br>
+        1. Open Omada Controller → Hotspot → Voucher<br>
+        2. Create vouchers (set duration as needed)<br>
+        3. Export / copy the codes<br>
+        4. Paste them below — one code per line
+      </div>
+      <div class="form-group">
+        <label class="form-label">Paste Voucher Codes (one per line)</label>
+        <textarea class="voucher-import-area" id="vi-codes" placeholder="e.g.&#10;ABC123&#10;DEF456&#10;GHI789&#10;..."></textarea>
+      </div>
+      <div id="vi-preview" style="font-size:12px;color:var(--text3);margin-bottom:12px;min-height:16px;"></div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <button class="btn btn-primary btn-full" onclick="doImportVouchers('${seatType}')">✅ Import Codes</button>
+        <button class="btn btn-secondary btn-full" onclick="closeDrawer()">Cancel</button>
+      </div>
+    `);
+    // Live preview counter
+    setTimeout(()=>{
+      const ta = document.getElementById('vi-codes');
+      if(ta) ta.addEventListener('input', ()=>{
+        const codes = ta.value.split('\n').map(c=>c.trim().toUpperCase()).filter(c=>c.length>0);
+        const preview = document.getElementById('vi-preview');
+        if(preview) preview.textContent = codes.length > 0 ? `${codes.length} code(s) ready to import` : '';
+      });
+    }, 300);
+  }, 200);
+}
+
+function doImportVouchers(seatType) {
+  const ta = document.getElementById('vi-codes');
+  if(!ta) return;
+  const raw = ta.value.split('\n').map(c=>c.trim().toUpperCase()).filter(c=>c.length>0);
+  if(raw.length === 0) { alert('Please paste at least one voucher code.'); return; }
+
+  const pools = getVoucherPools();
+  let poolIdx = pools.findIndex(p=>p.seatType===seatType);
+  if(poolIdx === -1) {
+    pools.push({ seatType, vouchers: [] });
+    poolIdx = pools.length - 1;
+  }
+
+  // Deduplicate: skip already existing codes
+  const existingCodes = new Set(pools[poolIdx].vouchers.map(v=>v.code));
+  const newCodes = raw.filter(c=>!existingCodes.has(c));
+  const dupes = raw.length - newCodes.length;
+
+  newCodes.forEach(code => {
+    pools[poolIdx].vouchers.push({ code, status:'available', importedAt: Date.now() });
+  });
+
+  saveVoucherPools(pools);
+  updateVoucherBadge();
+  closeDrawer();
+  showToast(`✅ Imported ${newCodes.length} voucher(s)${dupes>0?` (${dupes} duplicates skipped)`:''}`);
+  renderVouchersScreen();
+}
+
+function clearUsedVouchers(seatType) {
+  if(!confirm(`Remove all USED vouchers from the "${seatType}" pool? Available vouchers will remain.`)) return;
+  const pools = getVoucherPools();
+  const idx = pools.findIndex(p=>p.seatType===seatType);
+  if(idx === -1) return;
+  const before = pools[idx].vouchers.length;
+  pools[idx].vouchers = pools[idx].vouchers.filter(v=>v.status!=='used');
+  const removed = before - pools[idx].vouchers.length;
+  saveVoucherPools(pools);
+  showToast(`🗑 Removed ${removed} used voucher(s)`);
+  renderVouchersScreen();
+}
+
+// ── WiFi Slip Printer ─────────────────────────────────────────────────────────
+function buildWifiSlipHTML(seatName, voucherCode, duration) {
+  const w = printerSettings.paperWidth;
+  const pageW = w === 58 ? '58mm' : '80mm';
+  const ssid = printerSettings.wifiSsid || 'StudyHub WiFi';
+  const note = printerSettings.wifiSlipNote || 'Valid for this session only.';
+  const shopName = printerSettings.shopName || 'STUDYHUB';
+  const fs = parseInt(printerSettings.receiptFontSize||'10');
+  const fontFamily = printerSettings.receiptFont || 'ibm';
+  const fontMap = {
+    ibm:"'IBM Plex Mono','Courier New',monospace",
+    courier:"'Courier New',Courier,monospace",
+    share:"'Share Tech Mono','Courier New',monospace",
+    inconsolata:"'Inconsolata','Courier New',monospace",
+    roboto:"'Roboto Mono','Courier New',monospace",
+  };
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>WiFi Slip</title>
+<style>
+  @page{size:${pageW} auto;margin:3mm 2mm;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:${fontMap[fontFamily]||fontMap.ibm};font-size:${fs}pt;width:${pageW};color:#000;background:#fff;line-height:1.4;}
+  .center{text-align:center;}
+  .bold{font-weight:700;}
+  .divider{border-top:1px dashed #000;margin:5px 0;}
+  .divider-solid{border-top:2px solid #000;margin:5px 0;}
+  .row{display:flex;justify-content:space-between;margin:2px 0;font-size:${fs-1}pt;}
+  .section{margin:5px 0;}
+  .wifi-icon{font-size:${fs+8}pt;margin-bottom:2px;}
+  .code-box{border:2px solid #000;border-radius:4px;padding:6px 4px;margin:6px 0;}
+  .code-val{font-size:${fs+10}pt;font-weight:700;letter-spacing:4px;}
+</style></head><body>
+<div class="center section">
+  <div class="wifi-icon">📶</div>
+  <div class="bold" style="font-size:${fs+3}pt;letter-spacing:1px;">${shopName}</div>
+  <div style="font-size:${fs-1}pt;">WiFi Access Voucher</div>
+</div>
+<div class="divider-solid"></div>
+<div class="section">
+  <div class="row"><span>Seat:</span><span><b>${seatName}</b></span></div>
+  <div class="row"><span>Duration:</span><span>${duration}</span></div>
+  <div class="row"><span>Network:</span><span><b>${ssid}</b></span></div>
+  <div class="row"><span>Date:</span><span>${new Date().toLocaleDateString('en-PH')}</span></div>
+</div>
+<div class="divider"></div>
+<div class="center section">
+  <div style="font-size:${fs-1}pt;letter-spacing:1px;margin-bottom:3px;">YOUR CODE</div>
+  <div class="code-box center">
+    <div class="code-val">${voucherCode}</div>
+  </div>
+</div>
+<div class="divider"></div>
+<div class="center section" style="font-size:${fs-2}pt;">
+  <div><b>How to connect:</b></div>
+  <div>1. Connect to WiFi: <b>${ssid}</b></div>
+  <div>2. Open browser</div>
+  <div>3. Enter code: <b>${voucherCode}</b></div>
+</div>
+<div class="divider-solid"></div>
+<div class="center section" style="font-size:${fs-2}pt;">${note}</div>
+<script>window.onload=()=>{window.print();window.onafterprint=()=>window.close();}<\/script>
+</body></html>`;
+}
+
+function printWifiSlip(rec) {
+  if(!rec.wifiVoucher) { showToast('No voucher attached to this session'); return; }
+  const dur = fmtTime(Math.round(rec.elapsed*3600));
+  const html = buildWifiSlipHTML(rec.seatName, rec.wifiVoucher, dur);
+  openPrintWindow(html);
+  addPrinterLog('WiFi slip opened for printing', 'success');
+}
+
+function printWifiSlipDirect(seatName, voucherCode, duration) {
+  const html = buildWifiSlipHTML(seatName, voucherCode, duration);
+  openPrintWindow(html);
+  addPrinterLog('WiFi slip opened for printing', 'success');
+}
+
+// ── Patch processPayment to mark voucher used on checkout ─────────────────────
+// We hook into the existing save flow by overriding the sessions push
+const _origSessionPush = Array.prototype.push;
+// Instead, we call markVoucherUsed right after record is created in processPayment.
+// This is done by patching the state.sessions assignment in processPayment.
+// Since we already updated processPayment to save rec.wifiVoucher,
+// we call markVoucherUsed when we push the session:
+function pushSessionAndMarkVoucher(record) {
+  state.sessions = [record, ...state.sessions];
+  if(record.wifiVoucher && record.seatType) {
+    markVoucherUsed(record.seatType, record.wifiVoucher);
+  }
+}
+
 // ─── PWA Install ──────────────────────────────────────────────────────────────
 let deferredPrompt;
 window.addEventListener('beforeinstallprompt', e => {
@@ -3506,6 +4039,7 @@ if('serviceWorker' in navigator) {
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 initPrinterEngine();
+updateVoucherBadge();
 renderDashboard();
 </script>
 </body>
