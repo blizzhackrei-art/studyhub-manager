@@ -1,7 +1,10 @@
 {
-  "dependencies": {
-    "@capacitor/android": "^8.2.0",
-    "@capacitor/cli": "^8.2.0",
-    "@capacitor/core": "^8.2.0"
-  }
+  "name": "studyhub-win-bridge",
+  "version": "2.0.0",
+  "description": "StudyHub Windows Printer Bridge — sends ESC/POS print jobs from the browser to any installed Windows printer",
+  "main": "win-bridge.js",
+  "scripts": {
+    "start": "node win-bridge.js"
+  },
+  "dependencies": {}
 }
