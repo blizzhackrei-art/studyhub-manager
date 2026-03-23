@@ -1525,8 +1525,8 @@ setInterval(() => {
   const occ = occupied().length;
   const badge = document.getElementById('occ-badge');
   if(badge){badge.style.display=occ?'flex':'none';badge.textContent=occ;}
-  // ── Sound alerts for timed sessions ──
-  SoundEngine.tick(state.seats);
+  // ── Alert Engine tick (voice/beep notifications) ──
+  AlertEngine.tick(state.seats);
 }, 1000);
 
 // ─── Navigation ───────────────────────────────────────────────────────────────
@@ -2140,61 +2140,138 @@ function renderSettings() {
     </div>
     <button class="btn btn-primary btn-full" onclick="openSeatTypeForm()">+ Add Seat Type</button>
 
-    <div class="sec-heading" style="margin-top:20px;">🔔 Timer Sound Alerts</div>
-    <div class="card" style="padding:14px;margin-bottom:14px;">
+    <div class="sec-heading" style="margin-top:20px;">🔔 Timer Notification Alerts</div>
+    <div class="card" style="padding:14px;margin-bottom:14px;" id="alert-settings-card">
       <div class="info-box accent" style="margin-bottom:14px;">
-        Plays a sound when a timed session has <strong>5 minutes left</strong> and again when <strong>time is up</strong>.
+        Plays a <strong>voice-over</strong> or <strong>beep</strong> when a timed session has <strong>5 minutes left</strong> and when <strong>time is up</strong> — using your device's speaker.
       </div>
 
-      <!-- Enable toggle -->
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding:10px 0;border-bottom:1px solid var(--border);">
+      <!-- Master toggle -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);margin-bottom:14px;">
         <div>
-          <div style="font-size:14px;font-weight:800;">Sound Alerts</div>
-          <div style="font-size:11px;color:var(--text3);margin-top:2px;">Enable notification sounds for timed sessions</div>
+          <div style="font-size:14px;font-weight:800;">Enable Alerts</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px;">Voice-over or beep notifications for timed sessions</div>
         </div>
-        <div onclick="toggleSoundEnabled()" style="cursor:pointer;width:48px;height:26px;border-radius:13px;background:${printerSettings.soundEnabled?'var(--accent)':'var(--border)'};position:relative;transition:background 0.2s;flex-shrink:0;">
-          <div style="position:absolute;top:3px;left:${printerSettings.soundEnabled?'24px':'3px'};width:20px;height:20px;border-radius:50%;background:#fff;transition:left 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.3);"></div>
+        <div onclick="toggleAlertEnabled()" style="cursor:pointer;width:48px;height:26px;border-radius:13px;background:${printerSettings.alertEnabled?'var(--accent)':'var(--border)'};position:relative;transition:background 0.2s;flex-shrink:0;">
+          <div style="position:absolute;top:3px;left:${printerSettings.alertEnabled?'24px':'3px'};width:20px;height:20px;border-radius:50%;background:#fff;transition:left 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div>
         </div>
       </div>
 
-      <!-- Volume -->
-      <div class="form-group" style="${printerSettings.soundEnabled?'':'opacity:0.4;pointer-events:none;'}">
-        <label class="form-label">Volume — <span id="vol-label">${printerSettings.soundVolume??80}%</span></label>
-        <input type="range" id="sound-volume" min="10" max="100" step="5"
-          value="${printerSettings.soundVolume??80}"
-          oninput="document.getElementById('vol-label').textContent=this.value+'%'"
-          style="width:100%;accent-color:var(--accent);cursor:pointer;"/>
-      </div>
+      <div id="alert-body" style="${printerSettings.alertEnabled?'':'opacity:0.4;pointer-events:none;'}">
 
-      <!-- 5-min warning sound -->
-      <div style="${printerSettings.soundEnabled?'':'opacity:0.4;pointer-events:none;'}">
+        <!-- Alert Mode -->
         <div class="form-group">
-          <label class="form-label">⚠️ 5-Minute Warning Sound</label>
-          <div style="display:flex;gap:8px;align-items:center;">
-            <select class="form-select" id="sound-warning-type" style="flex:1;">
-              <option value="beep"  ${(printerSettings.soundWarningType||'beep')==='beep' ?'selected':''}>Double Beep</option>
-              <option value="chime" ${(printerSettings.soundWarningType||'beep')==='chime'?'selected':''}>Soft Chime</option>
-              <option value="alarm" ${(printerSettings.soundWarningType||'beep')==='alarm'?'selected':''}>Triple Pulse</option>
-            </select>
-            <button class="btn btn-secondary btn-sm" onclick="previewWarningSound()" style="flex-shrink:0;">▶ Test</button>
+          <label class="form-label">Alert Mode</label>
+          <div class="seg-ctrl" style="margin-bottom:0;" id="alert-mode-ctrl">
+            <button class="seg-btn ${(printerSettings.alertMode||'voice')==='voice'?'active':''}" onclick="setAlertMode('voice')">🗣️ Voice Only</button>
+            <button class="seg-btn ${(printerSettings.alertMode||'voice')==='beep' ?'active':''}" onclick="setAlertMode('beep')">🔔 Beep Only</button>
+            <button class="seg-btn ${(printerSettings.alertMode||'voice')==='both' ?'active':''}" onclick="setAlertMode('both')">🗣️+🔔 Both</button>
           </div>
         </div>
 
-        <!-- Time-up sound -->
-        <div class="form-group" style="margin-bottom:4px;">
-          <label class="form-label">⏰ Time-Up Alert Sound</label>
-          <div style="display:flex;gap:8px;align-items:center;">
-            <select class="form-select" id="sound-timeup-type" style="flex:1;">
-              <option value="alarm" ${(printerSettings.soundTimeupType||'alarm')==='alarm'?'selected':''}>Siren (Urgent)</option>
-              <option value="beep"  ${(printerSettings.soundTimeupType||'alarm')==='beep' ?'selected':''}>Fast Beeps</option>
-              <option value="chime" ${(printerSettings.soundTimeupType||'alarm')==='chime'?'selected':''}>Descending Chime</option>
+        <!-- Volume -->
+        <div class="form-group">
+          <label class="form-label">Volume — <span id="alert-vol-label">${printerSettings.alertVolume??90}%</span></label>
+          <input type="range" id="alert-volume" min="10" max="100" step="5"
+            value="${printerSettings.alertVolume??90}"
+            oninput="document.getElementById('alert-vol-label').textContent=this.value+'%'"
+            style="width:100%;accent-color:var(--accent);cursor:pointer;height:6px;"/>
+        </div>
+
+        <!-- ── VOICE SETTINGS ── -->
+        <div id="voice-settings" style="${(printerSettings.alertMode||'voice')!=='beep'?'':'display:none;'}">
+          <div style="font-size:11px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin:12px 0 10px;padding-top:10px;border-top:1px solid var(--border);">🗣️ Voice Settings</div>
+
+          <!-- Voice selector -->
+          <div class="form-group">
+            <label class="form-label">Voice</label>
+            <select class="form-select" id="alert-voice-uri" onchange="">
+              <option value="">Loading voices…</option>
             </select>
-            <button class="btn btn-secondary btn-sm" onclick="previewTimeupSound()" style="flex-shrink:0;">▶ Test</button>
+          </div>
+
+          <!-- Speech rate -->
+          <div class="form-group">
+            <label class="form-label">Speech Speed — <span id="alert-rate-label">${parseFloat(printerSettings.alertRate??0.9).toFixed(1)}x</span></label>
+            <input type="range" id="alert-rate" min="0.5" max="1.5" step="0.1"
+              value="${printerSettings.alertRate??0.9}"
+              oninput="document.getElementById('alert-rate-label').textContent=parseFloat(this.value).toFixed(1)+'x'"
+              style="width:100%;accent-color:var(--accent);cursor:pointer;height:6px;"/>
+            <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:3px;"><span>Slow</span><span>Normal</span><span>Fast</span></div>
+          </div>
+
+          <!-- Pitch -->
+          <div class="form-group">
+            <label class="form-label">Pitch — <span id="alert-pitch-label">${parseFloat(printerSettings.alertPitch??1.0).toFixed(1)}</span></label>
+            <input type="range" id="alert-pitch" min="0.5" max="2.0" step="0.1"
+              value="${printerSettings.alertPitch??1.0}"
+              oninput="document.getElementById('alert-pitch-label').textContent=parseFloat(this.value).toFixed(1)"
+              style="width:100%;accent-color:var(--accent);cursor:pointer;height:6px;"/>
+            <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:3px;"><span>Low</span><span>Normal</span><span>High</span></div>
+          </div>
+
+          <!-- Custom messages -->
+          <div class="form-group">
+            <label class="form-label">⚠️ 5-Min Warning Message <span style="color:var(--text3);font-weight:400;text-transform:none;">(use {seat} for seat name)</span></label>
+            <input class="form-input" id="alert-warning-msg"
+              value="${(printerSettings.alertWarningMsg||'5 minutes remaining for {seat}').replace(/"/g,'&quot;')}"
+              placeholder="5 minutes remaining for {seat}"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">⏰ Time-Up Message</label>
+            <input class="form-input" id="alert-timeup-msg"
+              value="${(printerSettings.alertTimeupMsg||'Time is up for {seat}').replace(/"/g,'&quot;')}"
+              placeholder="Time is up for {seat}"/>
+          </div>
+
+          <!-- Voice preview buttons -->
+          <div style="display:flex;gap:8px;margin-bottom:4px;">
+            <button class="btn btn-secondary" style="flex:1;" onclick="previewAlertWarning()">▶ Test Warning</button>
+            <button class="btn btn-secondary" style="flex:1;" onclick="previewAlertTimeup()">▶ Test Time-Up</button>
+          </div>
+          <div class="info-box" style="margin-bottom:4px;font-size:11px;">
+            💡 <strong>Tip:</strong> Voice quality depends on voices installed on your device. On Android, install <strong>Google Text-to-Speech</strong> for the best English voice. On Windows, voices are in System Settings → Speech.
           </div>
         </div>
-      </div>
 
-      <button class="btn btn-primary btn-full mt-12" onclick="saveSoundSettings()">💾 Save Sound Settings</button>
+        <!-- ── BEEP SETTINGS ── -->
+        <div id="beep-settings" style="${(printerSettings.alertMode||'voice')!=='voice'?'':'display:none;'}">
+          <div style="font-size:11px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin:12px 0 10px;padding-top:10px;border-top:1px solid var(--border);">🔔 Beep Settings</div>
+
+          <div class="form-group">
+            <label class="form-label">Beep Frequency — <span id="alert-freq-label">${printerSettings.alertBeepFreq??880} Hz</span></label>
+            <input type="range" id="alert-beep-freq" min="300" max="2000" step="50"
+              value="${printerSettings.alertBeepFreq??880}"
+              oninput="document.getElementById('alert-freq-label').textContent=this.value+' Hz'"
+              style="width:100%;accent-color:var(--accent);cursor:pointer;height:6px;"/>
+            <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:3px;"><span>Low tone</span><span>Mid</span><span>High tone</span></div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">⚠️ Warning Beeps</label>
+              <input class="form-input" id="alert-beep-warn-len" type="number" min="1" max="10"
+                value="${printerSettings.alertBeepWarningLen??3}" placeholder="3"/>
+              <div style="font-size:10px;color:var(--text3);margin-top:3px;">How many beeps</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">⏰ Time-Up Beeps</label>
+              <input class="form-input" id="alert-beep-timeup-len" type="number" min="1" max="10"
+                value="${printerSettings.alertBeepTimeupLen??5}" placeholder="5"/>
+              <div style="font-size:10px;color:var(--text3);margin-top:3px;">How many beeps</div>
+            </div>
+          </div>
+
+          <!-- Beep preview buttons -->
+          <div style="display:flex;gap:8px;margin-bottom:4px;">
+            <button class="btn btn-secondary" style="flex:1;" onclick="previewAlertWarning()">▶ Test Warning</button>
+            <button class="btn btn-secondary" style="flex:1;" onclick="previewAlertTimeup()">▶ Test Time-Up</button>
+          </div>
+        </div>
+
+      </div><!-- end alert-body -->
+
+      <button class="btn btn-primary btn-full mt-12" onclick="saveAlertSettings()">💾 Save Alert Settings</button>
     </div>
 
     <div class="sec-heading" style="margin-top:20px;">💾 Backup & Restore</div>
@@ -2217,6 +2294,8 @@ function renderSettings() {
     `:''}
     <div style="height:20px;"></div>
   `;
+  // Populate TTS voice list after DOM is ready
+  setTimeout(() => AlertEngine.populateVoiceList('alert-voice-uri'), 80);
 }
 function renderUserList() {
   const users = getUsers();
@@ -2843,33 +2922,77 @@ function clearHistory() {
   state.sessions=[];save();renderSettings();
 }
 
-// ── Sound Settings Functions ──────────────────────────────────────────────────
-function toggleSoundEnabled() {
-  printerSettings.soundEnabled = !printerSettings.soundEnabled;
+// ── Alert / Sound Settings ─────────────────────────────────────────────────────
+function toggleAlertEnabled() {
+  printerSettings.alertEnabled = !printerSettings.alertEnabled;
   savePrinterSettings();
   renderSettings();
+  // Populate voices after re-render
+  setTimeout(() => AlertEngine.populateVoiceList('alert-voice-uri'), 100);
 }
-function saveSoundSettings() {
-  printerSettings.soundVolume    = parseInt(document.getElementById('sound-volume')?.value ?? 80);
-  printerSettings.soundWarningType = document.getElementById('sound-warning-type')?.value || 'beep';
-  printerSettings.soundTimeupType  = document.getElementById('sound-timeup-type')?.value  || 'alarm';
+
+function setAlertMode(mode) {
+  // Update seg-btn active state immediately without full re-render
+  document.querySelectorAll('#alert-mode-ctrl .seg-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', ['voice','beep','both'][i] === mode);
+  });
+  // Show/hide voice vs beep sections
+  const vs = document.getElementById('voice-settings');
+  const bs = document.getElementById('beep-settings');
+  if(vs) vs.style.display = mode !== 'beep' ? '' : 'none';
+  if(bs) bs.style.display = mode !== 'voice' ? '' : 'none';
+  // Store temporarily so preview works correctly
+  printerSettings._previewMode = mode;
+}
+
+function saveAlertSettings() {
+  // Mode — read from seg-btn active state
+  const modeBtn = document.querySelector('#alert-mode-ctrl .seg-btn.active');
+  const modeMap = {'🗣️ Voice Only':'voice','🔔 Beep Only':'beep','🗣️+🔔 Both':'both'};
+  const rawText  = modeBtn?.textContent?.trim() || '';
+  printerSettings.alertMode = modeMap[rawText] || printerSettings._previewMode || 'voice';
+  delete printerSettings._previewMode;
+
+  printerSettings.alertEnabled       = printerSettings.alertEnabled ?? true;
+  printerSettings.alertVolume        = parseInt(document.getElementById('alert-volume')?.value ?? 90);
+  printerSettings.alertRate          = parseFloat(document.getElementById('alert-rate')?.value ?? 0.9);
+  printerSettings.alertPitch         = parseFloat(document.getElementById('alert-pitch')?.value ?? 1.0);
+  printerSettings.alertVoiceURI      = document.getElementById('alert-voice-uri')?.value || '';
+  printerSettings.alertWarningMsg    = document.getElementById('alert-warning-msg')?.value || '5 minutes remaining for {seat}';
+  printerSettings.alertTimeupMsg     = document.getElementById('alert-timeup-msg')?.value  || 'Time is up for {seat}';
+  printerSettings.alertBeepFreq      = parseInt(document.getElementById('alert-beep-freq')?.value ?? 880);
+  printerSettings.alertBeepWarningLen= parseInt(document.getElementById('alert-beep-warn-len')?.value ?? 3);
+  printerSettings.alertBeepTimeupLen = parseInt(document.getElementById('alert-beep-timeup-len')?.value ?? 5);
+
   savePrinterSettings();
-  showToast('🔔 Sound settings saved!');
+  showToast('🔔 Alert settings saved!');
 }
-function previewWarningSound() {
-  // Temporarily apply current UI selections before playing
-  const sel = document.getElementById('sound-warning-type');
-  const prev = printerSettings.soundWarningType;
-  if(sel) printerSettings.soundWarningType = sel.value;
-  SoundEngine.previewWarning();
-  printerSettings.soundWarningType = prev;
+
+function previewAlertWarning() {
+  // Apply live UI values temporarily so preview reflects current form state
+  _applyLiveAlertValues();
+  AlertEngine.previewWarning();
 }
-function previewTimeupSound() {
-  const sel = document.getElementById('sound-timeup-type');
-  const prev = printerSettings.soundTimeupType;
-  if(sel) printerSettings.soundTimeupType = sel.value;
-  SoundEngine.previewTimeup();
-  printerSettings.soundTimeupType = prev;
+
+function previewAlertTimeup() {
+  _applyLiveAlertValues();
+  AlertEngine.previewTimeup();
+}
+
+function _applyLiveAlertValues() {
+  const modeBtn = document.querySelector('#alert-mode-ctrl .seg-btn.active');
+  const modeMap = {'🗣️ Voice Only':'voice','🔔 Beep Only':'beep','🗣️+🔔 Both':'both'};
+  const rawText = modeBtn?.textContent?.trim() || '';
+  printerSettings.alertMode         = modeMap[rawText] || printerSettings.alertMode || 'voice';
+  printerSettings.alertVolume       = parseInt(document.getElementById('alert-volume')?.value      ?? printerSettings.alertVolume ?? 90);
+  printerSettings.alertRate         = parseFloat(document.getElementById('alert-rate')?.value      ?? printerSettings.alertRate ?? 0.9);
+  printerSettings.alertPitch        = parseFloat(document.getElementById('alert-pitch')?.value     ?? printerSettings.alertPitch ?? 1.0);
+  printerSettings.alertVoiceURI     = document.getElementById('alert-voice-uri')?.value            || printerSettings.alertVoiceURI || '';
+  printerSettings.alertWarningMsg   = document.getElementById('alert-warning-msg')?.value          || printerSettings.alertWarningMsg || '5 minutes remaining for {seat}';
+  printerSettings.alertTimeupMsg    = document.getElementById('alert-timeup-msg')?.value           || printerSettings.alertTimeupMsg  || 'Time is up for {seat}';
+  printerSettings.alertBeepFreq     = parseInt(document.getElementById('alert-beep-freq')?.value   ?? printerSettings.alertBeepFreq ?? 880);
+  printerSettings.alertBeepWarningLen= parseInt(document.getElementById('alert-beep-warn-len')?.value ?? printerSettings.alertBeepWarningLen ?? 3);
+  printerSettings.alertBeepTimeupLen = parseInt(document.getElementById('alert-beep-timeup-len')?.value ?? printerSettings.alertBeepTimeupLen ?? 5);
 }
 
 // ── Center Modal helpers ──────────────────────────────────────────────────────
@@ -3152,135 +3275,182 @@ let printerSettings = DB.get('sh_printer', {
   autoPrint: false,
   receiptFont: 'ibm',
   receiptFontSize: '10',
-  soundEnabled: true,
-  soundVolume: 80,
-  soundWarningType: 'beep',   // 'beep' | 'chime' | 'alarm'
-  soundTimeupType: 'alarm',   // 'beep' | 'chime' | 'alarm'
+  alertEnabled: true,
+  alertMode: 'voice',
+  alertVolume: 90,
+  alertRate: 0.9,
+  alertPitch: 1.0,
+  alertVoiceURI: '',
+  alertWarningMsg: '5 minutes remaining for {seat}',
+  alertTimeupMsg:  'Time is up for {seat}',
+  alertBeepWarningLen: 3,
+  alertBeepTimeupLen:  5,
+  alertBeepFreq: 880,
 });
 let printerLog = [];
 
 function savePrinterSettings() { DB.set('sh_printer', printerSettings); }
 
-// ═══════════════════ SOUND ENGINE ════════════════════════════════════════════
-// Uses Web Audio API — no external files needed, works offline
-const SoundEngine = (() => {
-  let _ctx = null;
-  // Tracks which seats have already triggered each alert so we don't repeat
-  const _firedWarning = new Set();  // seatId — 5-min warning fired
-  const _firedTimeup  = new Set();  // seatId — time-up fired
+// ══════════════════════════════════════════════════════════════════════════════
+// ALERT ENGINE  —  Voice-over (Web Speech API) + Web Audio beeps
+// ══════════════════════════════════════════════════════════════════════════════
+const AlertEngine = (() => {
+  // Tracks which alerts have already fired per seat so they don't repeat
+  const _firedWarning = new Set();
+  const _firedTimeup  = new Set();
 
-  function _getCtx() {
+  // ── Web Audio context (lazy init) ─────────────────────────────────────────
+  let _ctx = null;
+  function _audioCtx() {
     if (!_ctx) _ctx = new (window.AudioContext || window.webkitAudioContext)();
     if (_ctx.state === 'suspended') _ctx.resume();
     return _ctx;
   }
 
-  function _vol() {
-    return (printerSettings.soundVolume ?? 80) / 100;
-  }
-
-  // ── Tone primitives ────────────────────────────────────────────────────────
-  function _beep(freq, dur, type='sine', vol, delay=0) {
+  // ── Beep primitive ────────────────────────────────────────────────────────
+  function _beep(freq, dur, delay, vol) {
     try {
-      const ctx = _getCtx();
-      const osc = ctx.createOscillator();
+      const ctx  = _audioCtx();
+      const osc  = ctx.createOscillator();
       const gain = ctx.createGain();
-      osc.connect(gain); gain.connect(ctx.destination);
-      osc.type = type;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
       osc.frequency.setValueAtTime(freq, ctx.currentTime + delay);
       gain.gain.setValueAtTime(0, ctx.currentTime + delay);
-      gain.gain.linearRampToValueAtTime(vol ?? _vol(), ctx.currentTime + delay + 0.01);
+      gain.gain.linearRampToValueAtTime(vol, ctx.currentTime + delay + 0.02);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + dur);
       osc.start(ctx.currentTime + delay);
       osc.stop(ctx.currentTime + delay + dur + 0.05);
-    } catch(e) { console.warn('Sound error:', e); }
+    } catch(e) { console.warn('[Alert] beep error:', e); }
   }
 
-  // ── Sound presets ──────────────────────────────────────────────────────────
-  // Warning (5 min left) sounds — gentle but noticeable
-  const _warningBeep = () => {
-    // Two quick ascending beeps
-    _beep(880, 0.12, 'sine', null, 0);
-    _beep(1100, 0.12, 'sine', null, 0.18);
-  };
-  const _warningChime = () => {
-    // Soft chime: 3 descending notes
-    _beep(1047, 0.3, 'sine', null, 0);
-    _beep(880,  0.3, 'sine', null, 0.25);
-    _beep(784,  0.4, 'sine', null, 0.5);
-  };
-  const _warningAlarm = () => {
-    // Pulsing triple beep
-    for(let i = 0; i < 3; i++) _beep(900, 0.15, 'square', 0.4, i * 0.22);
-  };
+  // ── Play N beeps spaced out ───────────────────────────────────────────────
+  function _playBeeps(count, freq, beepDur) {
+    const vol = (printerSettings.alertVolume ?? 90) / 100;
+    const spacing = beepDur + 0.12;
+    for (let i = 0; i < count; i++) _beep(freq, beepDur, i * spacing, vol);
+  }
 
-  // Time-up sounds — urgent
-  const _timeupBeep = () => {
-    // Fast 5-beep urgent sequence
-    for(let i = 0; i < 5; i++) _beep(1200, 0.1, 'square', 0.6, i * 0.15);
-  };
-  const _timeupChime = () => {
-    // Descending alarm chime
-    [1047, 988, 880, 784, 698].forEach((f,i) => _beep(f, 0.25, 'sine', 0.7, i*0.2));
-  };
-  const _timeupAlarm = () => {
-    // Repeating two-tone siren (3 cycles)
-    for(let i = 0; i < 3; i++) {
-      _beep(1400, 0.18, 'sawtooth', 0.5, i * 0.38);
-      _beep(900,  0.18, 'sawtooth', 0.5, i * 0.38 + 0.2);
+  // ── Voice-over via Web Speech API ─────────────────────────────────────────
+  function _speak(text) {
+    if (!window.speechSynthesis) {
+      console.warn('[Alert] Web Speech API not supported in this browser.');
+      return;
     }
-  };
+    // Cancel any queued speech first to avoid overlap
+    window.speechSynthesis.cancel();
 
-  function _playWarning() {
-    if(!printerSettings.soundEnabled) return;
-    const t = printerSettings.soundWarningType || 'beep';
-    if(t === 'chime') _warningChime();
-    else if(t === 'alarm') _warningAlarm();
-    else _warningBeep();
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.volume = (printerSettings.alertVolume ?? 90) / 100;
+    utter.rate   = parseFloat(printerSettings.alertRate  ?? 0.9);
+    utter.pitch  = parseFloat(printerSettings.alertPitch ?? 1.0);
+    utter.lang   = 'en-PH';
+
+    // Apply selected voice if set
+    const uri = printerSettings.alertVoiceURI || '';
+    if (uri) {
+      const voices = window.speechSynthesis.getVoices();
+      const match  = voices.find(v => v.voiceURI === uri);
+      if (match) utter.voice = match;
+    }
+
+    // Android Chrome workaround: re-trigger if synthesis stalls
+    const resumeTimer = setInterval(() => {
+      if (window.speechSynthesis.paused) window.speechSynthesis.resume();
+    }, 1000);
+    utter.onend   = () => clearInterval(resumeTimer);
+    utter.onerror = () => clearInterval(resumeTimer);
+
+    window.speechSynthesis.speak(utter);
   }
 
-  function _playTimeup() {
-    if(!printerSettings.soundEnabled) return;
-    const t = printerSettings.soundTimeupType || 'alarm';
-    if(t === 'beep') _timeupBeep();
-    else if(t === 'chime') _timeupChime();
-    else _timeupAlarm();
+  // ── Build message text, replacing {seat} placeholder ─────────────────────
+  function _msg(template, seatName) {
+    return (template || '').replace(/\{seat\}/gi, seatName);
   }
 
-  // ── Called every tick from the clock setInterval ───────────────────────────
+  // ── Fire warning alert (5 min left) ──────────────────────────────────────
+  function _fireWarning(seatName) {
+    const mode = printerSettings.alertMode || 'voice';
+    if (mode === 'voice' || mode === 'both') {
+      _speak(_msg(printerSettings.alertWarningMsg || '5 minutes remaining for {seat}', seatName));
+    }
+    if (mode === 'beep' || mode === 'both') {
+      const n    = parseInt(printerSettings.alertBeepWarningLen ?? 3);
+      const freq = parseInt(printerSettings.alertBeepFreq ?? 880);
+      // Beep after a short delay when combined with voice so they don't overlap
+      setTimeout(() => _playBeeps(n, freq, 0.25), mode === 'both' ? 3200 : 0);
+    }
+  }
+
+  // ── Fire time-up alert ────────────────────────────────────────────────────
+  function _fireTimeup(seatName) {
+    const mode = printerSettings.alertMode || 'voice';
+    if (mode === 'voice' || mode === 'both') {
+      _speak(_msg(printerSettings.alertTimeupMsg || 'Time is up for {seat}', seatName));
+    }
+    if (mode === 'beep' || mode === 'both') {
+      const n    = parseInt(printerSettings.alertBeepTimeupLen ?? 5);
+      const freq = parseInt(printerSettings.alertBeepFreq ?? 880);
+      setTimeout(() => _playBeeps(n, freq, 0.18), mode === 'both' ? 3500 : 0);
+    }
+  }
+
+  // ── Called every second from the clock setInterval ─────────────────────
   function tick(seats) {
-    if(!printerSettings.soundEnabled) return;
+    if (!printerSettings.alertEnabled) return;
     const now = Date.now();
     seats.forEach(seat => {
-      if(!seat.session?.limitMs) return;
-      const remainMs = seat.session.limitMs - (now - seat.session.startTime);
+      if (!seat.session?.limitMs) return;
+      const remainMs  = seat.session.limitMs - (now - seat.session.startTime);
       const remainSec = Math.floor(remainMs / 1000);
 
-      // 5-minute warning: fire once when crossing below 300s
-      if(remainSec <= 300 && remainSec > 0 && !_firedWarning.has(seat.id)) {
+      // 5-minute warning — fires once when crossing below 300 s
+      if (remainSec <= 300 && remainSec > 0 && !_firedWarning.has(seat.id)) {
         _firedWarning.add(seat.id);
-        _playWarning();
+        _fireWarning(seat.name);
       }
 
-      // Time-up: fire once when remainMs hits 0 or below
-      if(remainMs <= 0 && !_firedTimeup.has(seat.id)) {
+      // Time-up — fires once when remainMs reaches 0
+      if (remainMs <= 0 && !_firedTimeup.has(seat.id)) {
         _firedTimeup.add(seat.id);
-        _playTimeup();
+        _fireTimeup(seat.name);
       }
     });
   }
 
-  // ── Clear tracking when session ends ──────────────────────────────────────
+  // ── Clear tracking when a session ends (so next session fires fresh) ──────
   function clearSeat(seatId) {
     _firedWarning.delete(seatId);
     _firedTimeup.delete(seatId);
   }
 
-  // ── Preview (for settings) ────────────────────────────────────────────────
-  function previewWarning() { _playWarning(); }
-  function previewTimeup()  { _playTimeup(); }
+  // ── Preview helpers called from Settings UI ───────────────────────────────
+  function previewWarning(seatName) { _fireWarning(seatName || 'Desk 01'); }
+  function previewTimeup(seatName)  { _fireTimeup(seatName  || 'Desk 01'); }
 
-  return { tick, clearSeat, previewWarning, previewTimeup };
+  // ── Populate voice selector with available TTS voices ─────────────────────
+  function populateVoiceList(selectId) {
+    const sel = document.getElementById(selectId);
+    if (!sel || !window.speechSynthesis) return;
+    const fill = () => {
+      const voices = window.speechSynthesis.getVoices();
+      if (!voices.length) return;
+      const cur = printerSettings.alertVoiceURI || '';
+      sel.innerHTML =
+        `<option value="">Default voice</option>` +
+        voices.map(v =>
+          `<option value="${v.voiceURI}" ${v.voiceURI === cur ? 'selected' : ''}>
+            ${v.name} (${v.lang})
+          </option>`
+        ).join('');
+    };
+    fill();
+    window.speechSynthesis.onvoiceschanged = fill;
+  }
+
+  return { tick, clearSeat, previewWarning, previewTimeup, populateVoiceList };
 })();
 
 // Windows Print Dialog: no connection needed — just open a styled popup and call window.print()
@@ -4228,8 +4398,7 @@ function pushSessionAndMarkVoucher(record) {
   if(record.wifiVoucher && record.seatType) {
     markVoucherUsed(record.seatType, record.wifiVoucher);
   }
-  // Clear sound alerts so they don't re-fire on a new session for same seat
-  SoundEngine.clearSeat(record.seatId);
+  AlertEngine.clearSeat(record.seatId);
 }
 
 // ─── PWA Install ──────────────────────────────────────────────────────────────
