@@ -1331,6 +1331,16 @@ window.addEventListener('DOMContentLoaded', async () => {
       if (window._resetInProgress) return;
       if (docs.length > 0) { state.rates = docs; DB.set('sh_rates', docs); }
     });
+    // ── Voucher pools real-time listener ──────────────────────────────────
+    // Each pool is stored as a separate Firestore doc (id = seatType key).
+    // The listener reassembles them into the flat array that getVoucherPools() expects.
+    window.FirebaseDB.listen('voucher_pools', (col, docs) => {
+      if (window._resetInProgress) return;
+      // Always sync — even if empty (e.g. all pools deleted from another device)
+      DB.set('sh_voucher_pools', docs);
+      updateVoucherBadge();
+      if (state.currentScreen === 'vouchers') renderVouchersScreen();
+    });
   } catch (e) {
     console.warn('Firebase not available, using local storage only:', e.message);
     document.getElementById('sync-text').textContent = 'Local only';
@@ -3993,12 +4003,22 @@ function showToast(msg) {
 
 // ── Storage helpers ───────────────────────────────────────────────────────────
 function getVoucherPools() {
+  // Read from the canonical localStorage key.
+  // FirebaseDB.set() also writes to 'sh_voucher_pools' when using collection 'voucher_pools',
+  // so both paths use the same key — they stay in sync automatically.
   return DB.get('sh_voucher_pools', []);
 }
 function saveVoucherPools(pools) {
+  // 1. Write to localStorage immediately (offline-safe, instant)
   DB.set('sh_voucher_pools', pools);
-  if(window.FirebaseDB?.configured) {
-    pools.forEach(p => window.FirebaseDB.set('voucher_pools', p.seatType.replace(/\s+/g,'_'), p));
+  // 2. Write each pool as a separate Firestore document so the real-time
+  //    listener on other devices picks it up instantly.
+  if (window.FirebaseDB?.configured) {
+    pools.forEach(p => {
+      // Use a stable doc ID derived from the seat type name
+      const docId = p.seatType.replace(/\s+/g, '_').toLowerCase();
+      window.FirebaseDB.set('voucher_pools', docId, { ...p, id: docId });
+    });
   }
 }
 function getVoucherPool(seatType) {
@@ -4317,7 +4337,7 @@ function buildWifiSlipHTML(seatName, voucherCode, duration) {
   const note = printerSettings.wifiSlipNote || 'Valid for this session only.';
   const shopName = printerSettings.shopName || 'STUDYHUB';
   const fs = parseInt(printerSettings.receiptFontSize||'10');
-  const fontFamily = printerSettings.receiptFont || 'roboto';
+  const fontFamily = printerSettings.receiptFont || 'ibm';
   const fontMap = {
     ibm:"'IBM Plex Mono','Courier New',monospace",
     courier:"'Courier New',Courier,monospace",
@@ -4329,7 +4349,7 @@ function buildWifiSlipHTML(seatName, voucherCode, duration) {
 <style>
   @page{size:${pageW} auto;margin:3mm 2mm;}
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:${fontMap[fontFamily]||fontMap.roboto};font-size:${fs}pt;width:${pageW};color:#000;background:#fff;line-height:1.4;}
+  body{font-family:${fontMap[fontFamily]||fontMap.ibm};font-size:${fs}pt;width:${pageW};color:#000;background:#fff;line-height:1.4;}
   .center{text-align:center;}
   .bold{font-weight:700;}
   .divider{border-top:1px dashed #000;margin:5px 0;}
