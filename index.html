@@ -335,6 +335,19 @@ input,select{font-family:var(--font);outline:none;}
 .report-table td{padding:12px;font-size:13px;border-bottom:1px solid var(--border);}
 .report-table tr:last-child td{border-bottom:none;}
 
+/* ── Settings Tiles ── */
+.settings-tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px;}
+.settings-tile{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:16px 12px;cursor:pointer;transition:all 0.15s;display:flex;flex-direction:column;align-items:flex-start;gap:6px;position:relative;overflow:hidden;}
+.settings-tile:active{transform:scale(0.96);}
+.settings-tile:hover{border-color:var(--accent);background:var(--accent-dim);}
+.settings-tile.danger:hover{border-color:var(--red);background:rgba(239,68,68,0.06);}
+.settings-tile .st-icon{font-size:24px;line-height:1;}
+.settings-tile .st-label{font-size:13px;font-weight:800;color:var(--text);}
+.settings-tile .st-sub{font-size:10px;color:var(--text3);font-weight:600;}
+.settings-tile .st-badge{position:absolute;top:8px;right:8px;background:var(--red);color:#fff;font-size:9px;font-weight:800;padding:1px 6px;border-radius:10px;font-family:var(--mono);}
+.settings-tile .st-badge.warn{background:var(--warn);}
+.settings-tile .st-badge.ok{background:var(--accent);color:#0f1923;}
+
 /* ── Misc ── */
 .divider{border:none;border-top:1px solid var(--border);margin:12px 0;}
 .mt-8{margin-top:8px;}
@@ -514,7 +527,6 @@ input,select{font-family:var(--font);outline:none;}
     <div class="nav-tab" data-screen="sessions"><span class="icon">⏱</span><span class="label">Sessions</span></div>
     <div class="nav-tab" data-screen="reports"><span class="icon">📊</span><span class="label">Reports</span></div>
     <div class="nav-tab" data-screen="settings"><span class="icon">⚙️</span><span class="label">Settings</span></div>
-    <div class="nav-tab" data-screen="vouchers"><span class="icon">🎟️</span><span class="label">Vouchers</span><span class="nav-badge" id="voucher-low-badge" style="display:none;">!</span></div>
   </nav>
 </div>
 </div>
@@ -1557,7 +1569,6 @@ function navigate(screen) {
   document.querySelectorAll('.sidebar-item').forEach(el => el.classList.toggle('active', el.dataset.screen===screen));
   const ab = document.getElementById('topbar-action-btn');
   if(screen==='seats'){ab.style.display='flex';ab.textContent='+ Seat';ab.onclick=()=>openSeatForm();}
-  else if(screen==='settings'){ab.style.display='flex';ab.textContent='+ Rate';ab.onclick=()=>openRateForm();}
   else if(screen==='printer'){ab.style.display='flex';ab.textContent='🖨️ Test';ab.onclick=()=>printerTestPrint();}
   else if(screen==='vouchers'){ab.style.display='flex';ab.textContent='+ Import';ab.onclick=()=>openVoucherImport();}
   else ab.style.display='none';
@@ -1816,7 +1827,10 @@ function renderSessions() {
             </div>
             <div class="list-item-right">
               <div class="list-item-val">${fmt(s.finalTotal||s.bill)}</div>
-              <button class="btn btn-secondary btn-sm" style="margin-top:6px;font-size:11px;" onclick="reprintSession('${s.id}')">🖨 Reprint</button>
+              <div style="display:flex;gap:4px;margin-top:6px;justify-content:flex-end;">
+                <button class="btn btn-secondary btn-sm" style="font-size:11px;" onclick="reprintSession('${s.id}')">🖨 Reprint</button>
+                ${s.wifiVoucher?`<button class="btn btn-secondary btn-sm" style="font-size:11px;" onclick="reprintWifiSlip('${s.id}')">📶 WiFi</button>`:''}
+              </div>
             </div>
           </div>
         `).join('')}
@@ -1943,6 +1957,16 @@ function reprintSession(sessionId) {
   }
   printSessionReceipt(s);
   showToast('🖨 Reprinting receipt…');
+}
+
+function reprintWifiSlip(sessionId) {
+  const s = state.sessions.find(x=>x.id===sessionId);
+  if(!s){ showToast('Session not found'); return; }
+  if(!s.wifiVoucher){ showToast('No WiFi voucher for this session'); return; }
+  const dur = fmtTime(Math.round(s.elapsed*3600));
+  const html = buildWifiSlipHTML(s.seatName, s.wifiVoucher, dur);
+  openPrintWindow(html);
+  showToast('📶 WiFi slip opened for printing');
 }
 
 // ── REPORTS ───────────────────────────────────────────────────────────────────
@@ -2099,212 +2123,266 @@ function exportToCSV() {
 function renderSettings() {
   const isAdmin = state.currentUser?.role === 'admin';
   const el = document.getElementById('settings-content');
+
+  // Compute badge counts for tiles
+  const pools = getVoucherPools();
+  const voucherLow = pools.filter(p=>p.vouchers.filter(v=>v.status==='available').length<=20).length;
+  const voucherTotal = pools.reduce((a,p)=>a+p.vouchers.filter(v=>v.status==='available').length,0);
+  const printerOk = isPrinterReady();
+
   el.innerHTML = `
-    <div class="sec-heading">Pricing Rates</div>
-    <div class="card" style="margin-bottom:14px;">
-      ${state.rates.map(r=>`
-        <div class="list-item">
-          <div class="list-item-main"><div class="list-item-title">${r.name}</div><div class="list-item-sub">Min charge: ${fmt(r.minCharge)}</div></div>
-          <div class="list-item-right">
-            <div class="list-item-val">${fmt(r.perHour)}/hr</div>
-            ${isAdmin?`<div style="display:flex;gap:6px;margin-top:4px;justify-content:flex-end;"><button class="btn btn-secondary btn-sm" onclick="openRateForm('${r.id}')">Edit</button><button class="btn btn-danger btn-sm" onclick="deleteRate('${r.id}')">🗑</button></div>`:''}\
-          </div>
-        </div>`).join('')}
-    </div>
-    ${isAdmin?`<button class="btn btn-primary btn-full" onclick="openRateForm()">+ Add New Rate</button>`:''}
+    <div class="sec-heading" style="margin-top:4px;">Quick Access</div>
+    <div class="settings-tiles">
 
-    <div class="sec-heading" style="margin-top:20px;">All Seats</div>
-    <div class="card">
-      ${state.seats.map(s=>{
-        const rate = getRate(s.rateId);
-        return `<div class="list-item">
-          <div class="list-item-main"><div class="list-item-title">${s.name}</div><div class="list-item-sub">${s.type} · ${rate.name} (${fmt(rate.perHour)}/hr)</div></div>
-          <div class="list-item-right">
-            <span class="pill pill-${s.status==='available'?'green':s.status==='occupied'?'purple':s.status==='reserved'?'warn':'red'}">${s.status}</span>
-            ${isAdmin?`<div style="display:flex;gap:6px;margin-top:6px;justify-content:flex-end;"><button class="btn btn-secondary btn-sm" onclick="openSeatForm('${s.id}')">Edit</button>${s.status!=='occupied'?`<button class="btn btn-danger btn-sm" onclick="deleteSeat('${s.id}')">🗑</button>`:''}</div>`:''}\
-          </div>
-        </div>`;}).join('')}
-    </div>
-    ${isAdmin?`<button class="btn btn-primary btn-full mt-12" onclick="openSeatForm()">+ Add New Seat</button>`:''}
-
-    <div class="sec-heading" style="margin-top:20px;">Payment Methods</div>
-    <div class="card" style="margin-bottom:14px;">
-      ${state.paymentTypes.map(pt=>`
-        <div class="list-item">
-          <div class="list-item-main"><div class="list-item-title">${pt.name}</div><div class="list-item-sub">${pt.isActive?'Active':'Disabled'}</div></div>
-          ${isAdmin?`<div style="display:flex;gap:6px;"><button class="btn btn-secondary btn-sm" onclick="openPaymentTypeForm('${pt.id}')">Edit</button><button class="btn btn-${pt.isActive?'danger':'warning'} btn-sm" onclick="togglePaymentType('${pt.id}')">${pt.isActive?'Disable':'Enable'}</button></div>`:''}\
-        </div>`).join('')}
-    </div>
-    ${isAdmin?`<button class="btn btn-primary btn-full" onclick="openPaymentTypeForm()">+ Add Payment Method</button>`:''}
-
-    ${isAdmin?`
-    <div class="sec-heading" style="margin-top:20px;">👥 User Accounts</div>
-    <div class="card" style="margin-bottom:14px;" id="users-list">
-      ${renderUserList()}
-    </div>
-    <button class="btn btn-primary btn-full" onclick="openUserForm()">+ Add User</button>
-
-    <div class="sec-heading" style="margin-top:20px;">🏷️ Seat Types</div>
-    <div class="card" style="margin-bottom:14px;" id="seat-types-list">
-      ${renderSeatTypeList()}
-    </div>
-    <button class="btn btn-primary btn-full" onclick="openSeatTypeForm()">+ Add Seat Type</button>
-
-    <div class="sec-heading" style="margin-top:20px;">🔔 Timer Notification Alerts</div>
-    <div class="card" style="padding:14px;margin-bottom:14px;" id="alert-settings-card">
-      <div class="info-box accent" style="margin-bottom:14px;">
-        Plays a <strong>voice-over</strong> or <strong>beep</strong> when a timed session has <strong>5 minutes left</strong> and when <strong>time is up</strong> — using your device's speaker.
+      <div class="settings-tile" onclick="openSettingsSection('rates')">
+        <span class="st-icon">💰</span>
+        <span class="st-label">Pricing Rates</span>
+        <span class="st-sub">${state.rates.length} rate${state.rates.length!==1?'s':''}</span>
       </div>
 
-      <!-- Master toggle -->
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);margin-bottom:14px;">
-        <div>
-          <div style="font-size:14px;font-weight:800;">Enable Alerts</div>
-          <div style="font-size:11px;color:var(--text3);margin-top:2px;">Voice-over or beep notifications for timed sessions</div>
-        </div>
-        <div onclick="toggleAlertEnabled()" style="cursor:pointer;width:48px;height:26px;border-radius:13px;background:${printerSettings.alertEnabled?'var(--accent)':'var(--border)'};position:relative;transition:background 0.2s;flex-shrink:0;">
-          <div style="position:absolute;top:3px;left:${printerSettings.alertEnabled?'24px':'3px'};width:20px;height:20px;border-radius:50%;background:#fff;transition:left 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div>
-        </div>
+      <div class="settings-tile" onclick="openSettingsSection('seats')">
+        <span class="st-icon">🪑</span>
+        <span class="st-label">All Seats</span>
+        <span class="st-sub">${state.seats.length} seat${state.seats.length!==1?'s':''} · ${state.seats.filter(s=>s.status==='available').length} available</span>
       </div>
 
-      <div id="alert-body" style="${printerSettings.alertEnabled?'':'opacity:0.4;pointer-events:none;'}">
-
-        <!-- Alert Mode -->
-        <div class="form-group">
-          <label class="form-label">Alert Mode</label>
-          <div class="seg-ctrl" style="margin-bottom:0;" id="alert-mode-ctrl">
-            <button class="seg-btn ${(printerSettings.alertMode||'voice')==='voice'?'active':''}" onclick="setAlertMode('voice')">🗣️ Voice Only</button>
-            <button class="seg-btn ${(printerSettings.alertMode||'voice')==='beep' ?'active':''}" onclick="setAlertMode('beep')">🔔 Beep Only</button>
-            <button class="seg-btn ${(printerSettings.alertMode||'voice')==='both' ?'active':''}" onclick="setAlertMode('both')">🗣️+🔔 Both</button>
-          </div>
-        </div>
-
-        <!-- Volume -->
-        <div class="form-group">
-          <label class="form-label">Volume — <span id="alert-vol-label">${printerSettings.alertVolume??90}%</span></label>
-          <input type="range" id="alert-volume" min="10" max="100" step="5"
-            value="${printerSettings.alertVolume??90}"
-            oninput="document.getElementById('alert-vol-label').textContent=this.value+'%'"
-            style="width:100%;accent-color:var(--accent);cursor:pointer;height:6px;"/>
-        </div>
-
-        <!-- ── VOICE SETTINGS ── -->
-        <div id="voice-settings" style="${(printerSettings.alertMode||'voice')!=='beep'?'':'display:none;'}">
-          <div style="font-size:11px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin:12px 0 10px;padding-top:10px;border-top:1px solid var(--border);">🗣️ Voice Settings</div>
-
-          <!-- Voice selector -->
-          <div class="form-group">
-            <label class="form-label">Voice</label>
-            <select class="form-select" id="alert-voice-uri" onchange="">
-              <option value="">Loading voices…</option>
-            </select>
-          </div>
-
-          <!-- Speech rate -->
-          <div class="form-group">
-            <label class="form-label">Speech Speed — <span id="alert-rate-label">${parseFloat(printerSettings.alertRate??0.9).toFixed(1)}x</span></label>
-            <input type="range" id="alert-rate" min="0.5" max="1.5" step="0.1"
-              value="${printerSettings.alertRate??0.9}"
-              oninput="document.getElementById('alert-rate-label').textContent=parseFloat(this.value).toFixed(1)+'x'"
-              style="width:100%;accent-color:var(--accent);cursor:pointer;height:6px;"/>
-            <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:3px;"><span>Slow</span><span>Normal</span><span>Fast</span></div>
-          </div>
-
-          <!-- Pitch -->
-          <div class="form-group">
-            <label class="form-label">Pitch — <span id="alert-pitch-label">${parseFloat(printerSettings.alertPitch??1.0).toFixed(1)}</span></label>
-            <input type="range" id="alert-pitch" min="0.5" max="2.0" step="0.1"
-              value="${printerSettings.alertPitch??1.0}"
-              oninput="document.getElementById('alert-pitch-label').textContent=parseFloat(this.value).toFixed(1)"
-              style="width:100%;accent-color:var(--accent);cursor:pointer;height:6px;"/>
-            <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:3px;"><span>Low</span><span>Normal</span><span>High</span></div>
-          </div>
-
-          <!-- Custom messages -->
-          <div class="form-group">
-            <label class="form-label">⚠️ 5-Min Warning Message <span style="color:var(--text3);font-weight:400;text-transform:none;">(use {seat} for seat name)</span></label>
-            <input class="form-input" id="alert-warning-msg"
-              value="${(printerSettings.alertWarningMsg||'5 minutes remaining for {seat}').replace(/"/g,'&quot;')}"
-              placeholder="5 minutes remaining for {seat}"/>
-          </div>
-          <div class="form-group">
-            <label class="form-label">⏰ Time-Up Message</label>
-            <input class="form-input" id="alert-timeup-msg"
-              value="${(printerSettings.alertTimeupMsg||'Time is up for {seat}').replace(/"/g,'&quot;')}"
-              placeholder="Time is up for {seat}"/>
-          </div>
-
-          <!-- Voice preview buttons -->
-          <div style="display:flex;gap:8px;margin-bottom:4px;">
-            <button class="btn btn-secondary" style="flex:1;" onclick="previewAlertWarning()">▶ Test Warning</button>
-            <button class="btn btn-secondary" style="flex:1;" onclick="previewAlertTimeup()">▶ Test Time-Up</button>
-          </div>
-          <div class="info-box" style="margin-bottom:4px;font-size:11px;">
-            💡 <strong>Tip:</strong> Voice quality depends on voices installed on your device. On Android, install <strong>Google Text-to-Speech</strong> for the best English voice. On Windows, voices are in System Settings → Speech.
-          </div>
-        </div>
-
-        <!-- ── BEEP SETTINGS ── -->
-        <div id="beep-settings" style="${(printerSettings.alertMode||'voice')!=='voice'?'':'display:none;'}">
-          <div style="font-size:11px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin:12px 0 10px;padding-top:10px;border-top:1px solid var(--border);">🔔 Beep Settings</div>
-
-          <div class="form-group">
-            <label class="form-label">Beep Frequency — <span id="alert-freq-label">${printerSettings.alertBeepFreq??880} Hz</span></label>
-            <input type="range" id="alert-beep-freq" min="300" max="2000" step="50"
-              value="${printerSettings.alertBeepFreq??880}"
-              oninput="document.getElementById('alert-freq-label').textContent=this.value+' Hz'"
-              style="width:100%;accent-color:var(--accent);cursor:pointer;height:6px;"/>
-            <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:3px;"><span>Low tone</span><span>Mid</span><span>High tone</span></div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">⚠️ Warning Beeps</label>
-              <input class="form-input" id="alert-beep-warn-len" type="number" min="1" max="10"
-                value="${printerSettings.alertBeepWarningLen??3}" placeholder="3"/>
-              <div style="font-size:10px;color:var(--text3);margin-top:3px;">How many beeps</div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">⏰ Time-Up Beeps</label>
-              <input class="form-input" id="alert-beep-timeup-len" type="number" min="1" max="10"
-                value="${printerSettings.alertBeepTimeupLen??5}" placeholder="5"/>
-              <div style="font-size:10px;color:var(--text3);margin-top:3px;">How many beeps</div>
-            </div>
-          </div>
-
-          <!-- Beep preview buttons -->
-          <div style="display:flex;gap:8px;margin-bottom:4px;">
-            <button class="btn btn-secondary" style="flex:1;" onclick="previewAlertWarning()">▶ Test Warning</button>
-            <button class="btn btn-secondary" style="flex:1;" onclick="previewAlertTimeup()">▶ Test Time-Up</button>
-          </div>
-        </div>
-
-      </div><!-- end alert-body -->
-
-      <button class="btn btn-primary btn-full mt-12" onclick="saveAlertSettings()">💾 Save Alert Settings</button>
-    </div>
-
-    <div class="sec-heading" style="margin-top:20px;">💾 Backup & Restore</div>
-    <div class="card" style="padding:14px;margin-bottom:14px;">
-      <div style="font-size:13px;color:var(--text2);margin-bottom:12px;">Export all app data to a JSON file, or restore from a previous backup.</div>
-      <div style="display:flex;gap:8px;">
-        <button class="btn btn-secondary" style="flex:1;" onclick="openBackupModal()">📤 Backup</button>
-        <button class="btn btn-secondary" style="flex:1;" onclick="openRestoreModal()">📥 Restore</button>
+      <div class="settings-tile" onclick="openSettingsSection('payments')">
+        <span class="st-icon">💳</span>
+        <span class="st-label">Payment Methods</span>
+        <span class="st-sub">${state.paymentTypes.filter(p=>p.isActive).length} active</span>
       </div>
-    </div>
 
-    <div class="sec-heading" style="margin-top:20px;">🔴 Reset Data</div>
-    <div class="card" style="padding:14px;">
-      <div class="info-box warn" style="margin-bottom:12px;"><strong>Admin only.</strong> Permanently deletes selected data. This cannot be undone. Consider making a backup first.</div>
-      <button class="btn btn-danger btn-full" onclick="openResetModal()">⚠️ Reset Selected Data…</button>
+      ${isAdmin?`
+      <div class="settings-tile" onclick="openSettingsSection('users')">
+        <span class="st-icon">👥</span>
+        <span class="st-label">User Accounts</span>
+        <span class="st-sub">${getUsers().length} user${getUsers().length!==1?'s':''}</span>
+      </div>
+
+      <div class="settings-tile" onclick="openSettingsSection('seattypes')">
+        <span class="st-icon">🏷️</span>
+        <span class="st-label">Seat Types</span>
+        <span class="st-sub">${getSeatTypes().length} type${getSeatTypes().length!==1?'s':''}</span>
+      </div>
+      `:''}
+
+      <div class="settings-tile" onclick="openSettingsSection('alerts')">
+        <span class="st-icon">🔔</span>
+        <span class="st-label">Timer Alerts</span>
+        <span class="st-sub">${printerSettings.alertEnabled?'Enabled · '+(printerSettings.alertMode||'voice'):'Disabled'}</span>
+        ${printerSettings.alertEnabled?`<span class="st-badge ok">ON</span>`:''}
+      </div>
+
+      <div class="settings-tile" onclick="navigate('vouchers')">
+        <span class="st-icon">🎟️</span>
+        <span class="st-label">WiFi Vouchers</span>
+        <span class="st-sub">${voucherTotal} available</span>
+        ${voucherLow>0?`<span class="st-badge warn">LOW</span>`:''}
+      </div>
+
+      <div class="settings-tile" onclick="navigate('printer')">
+        <span class="st-icon">🖨️</span>
+        <span class="st-label">Printer</span>
+        <span class="st-sub">${printerOk?'Connected':'Not connected'}</span>
+        ${printerOk?`<span class="st-badge ok">OK</span>`:''}
+      </div>
+
+      ${isAdmin?`
+      <div class="settings-tile" onclick="openSettingsSection('backup')">
+        <span class="st-icon">💾</span>
+        <span class="st-label">Backup & Restore</span>
+        <span class="st-sub">Export or import data</span>
+      </div>
+
+      <div class="settings-tile danger" onclick="openResetModal()">
+        <span class="st-icon">🗑️</span>
+        <span class="st-label">Reset Data</span>
+        <span class="st-sub">Permanently delete data</span>
+      </div>
+      `:''}
+
     </div>
-    `:!isAdmin?`
-    <div class="sec-heading" style="margin-top:20px;">Data Management</div>
-    <div class="card" style="padding:14px;"><div style="font-size:13px;color:var(--text2);">Contact your Admin to manage data, backups, or resets.</div></div>
-    `:''}
     <div style="height:20px;"></div>
   `;
-  // Populate TTS voice list after DOM is ready
+}
+
+// ── Settings Section Drawers ───────────────────────────────────────────────────
+function openSettingsSection(section) {
+  const isAdmin = state.currentUser?.role === 'admin';
+  if (section === 'rates') {
+    openDrawer(`
+      <div class="drawer-title">💰 Pricing Rates</div>
+      <div class="card" style="margin-bottom:14px;">
+        ${state.rates.map(r=>`
+          <div class="list-item">
+            <div class="list-item-main"><div class="list-item-title">${r.name}</div><div class="list-item-sub">Min charge: ${fmt(r.minCharge)}</div></div>
+            <div class="list-item-right">
+              <div class="list-item-val">${fmt(r.perHour)}/hr</div>
+              ${isAdmin?`<div style="display:flex;gap:6px;margin-top:4px;"><button class="btn btn-secondary btn-sm" onclick="closeDrawer();setTimeout(()=>openRateForm('${r.id}'),200)">Edit</button><button class="btn btn-danger btn-sm" onclick="deleteRate('${r.id}')">🗑</button></div>`:''}
+            </div>
+          </div>`).join('')}
+      </div>
+      ${isAdmin?`<button class="btn btn-primary btn-full" onclick="closeDrawer();setTimeout(()=>openRateForm(),200)">+ Add New Rate</button>`:''}
+      <button class="btn btn-secondary btn-full mt-8" onclick="closeDrawer()">Close</button>
+    `);
+  } else if (section === 'seats') {
+    openDrawer(`
+      <div class="drawer-title">🪑 All Seats</div>
+      <div class="card" style="margin-bottom:14px;">
+        ${state.seats.map(s=>{
+          const rate = getRate(s.rateId);
+          return `<div class="list-item">
+            <div class="list-item-main"><div class="list-item-title">${s.name}</div><div class="list-item-sub">${s.type} · ${rate.name} (${fmt(rate.perHour)}/hr)</div></div>
+            <div class="list-item-right">
+              <span class="pill pill-${s.status==='available'?'green':s.status==='occupied'?'purple':s.status==='reserved'?'warn':'red'}">${s.status}</span>
+              ${isAdmin?`<div style="display:flex;gap:6px;margin-top:6px;"><button class="btn btn-secondary btn-sm" onclick="closeDrawer();setTimeout(()=>openSeatForm('${s.id}'),200)">Edit</button>${s.status!=='occupied'?`<button class="btn btn-danger btn-sm" onclick="deleteSeat('${s.id}')">🗑</button>`:''}</div>`:''}
+            </div>
+          </div>`;}).join('')}
+      </div>
+      ${isAdmin?`<button class="btn btn-primary btn-full" onclick="closeDrawer();setTimeout(()=>openSeatForm(),200)">+ Add New Seat</button>`:''}
+      <button class="btn btn-secondary btn-full mt-8" onclick="closeDrawer()">Close</button>
+    `);
+  } else if (section === 'payments') {
+    openDrawer(`
+      <div class="drawer-title">💳 Payment Methods</div>
+      <div class="card" style="margin-bottom:14px;">
+        ${state.paymentTypes.map(pt=>`
+          <div class="list-item">
+            <div class="list-item-main"><div class="list-item-title">${pt.name}</div><div class="list-item-sub">${pt.isActive?'Active':'Disabled'}</div></div>
+            ${isAdmin?`<div style="display:flex;gap:6px;">
+              <button class="btn btn-secondary btn-sm" onclick="closeDrawer();setTimeout(()=>openPaymentTypeForm('${pt.id}'),200)">Edit</button>
+              <button class="btn btn-${pt.isActive?'danger':'warning'} btn-sm" onclick="togglePaymentType('${pt.id}');closeDrawer();setTimeout(()=>openSettingsSection('payments'),200)">${pt.isActive?'Disable':'Enable'}</button>
+            </div>`:''}\
+          </div>`).join('')}
+      </div>
+      ${isAdmin?`<button class="btn btn-primary btn-full" onclick="closeDrawer();setTimeout(()=>openPaymentTypeForm(),200)">+ Add Payment Method</button>`:''}
+      <button class="btn btn-secondary btn-full mt-8" onclick="closeDrawer()">Close</button>
+    `);
+  } else if (section === 'users') {
+    openDrawer(`
+      <div class="drawer-title">👥 User Accounts</div>
+      <div class="card" style="margin-bottom:14px;">
+        ${renderUserList()}
+      </div>
+      <button class="btn btn-primary btn-full" onclick="closeDrawer();setTimeout(()=>openUserForm(),200)">+ Add User</button>
+      <button class="btn btn-secondary btn-full mt-8" onclick="closeDrawer()">Close</button>
+    `);
+  } else if (section === 'seattypes') {
+    openDrawer(`
+      <div class="drawer-title">🏷️ Seat Types</div>
+      <div class="card" style="margin-bottom:14px;">
+        ${renderSeatTypeList()}
+      </div>
+      <button class="btn btn-primary btn-full" onclick="closeDrawer();setTimeout(()=>openSeatTypeForm(),200)">+ Add Seat Type</button>
+      <button class="btn btn-secondary btn-full mt-8" onclick="closeDrawer()">Close</button>
+    `);
+  } else if (section === 'backup') {
+    openBackupModal();
+  } else if (section === 'alerts') {
+    openAlertSettingsDrawer();
+  }
+}
+
+// ── Alert Settings in Drawer ───────────────────────────────────────────────────
+function openAlertSettingsDrawer() {
+  openDrawer(`
+    <div class="drawer-title">🔔 Timer Notification Alerts</div>
+    <div class="info-box accent" style="margin-bottom:14px;">
+      Voice-over or beep when a timed session has <strong>5 minutes left</strong> and when <strong>time is up</strong>.
+    </div>
+
+    <!-- Master toggle -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);margin-bottom:14px;">
+      <div>
+        <div style="font-size:14px;font-weight:800;">Enable Alerts</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px;">Voice or beep for timed sessions</div>
+      </div>
+      <div onclick="toggleAlertEnabled()" style="cursor:pointer;width:48px;height:26px;border-radius:13px;background:${printerSettings.alertEnabled?'var(--accent)':'var(--border)'};position:relative;transition:background 0.2s;flex-shrink:0;">
+        <div style="position:absolute;top:3px;left:${printerSettings.alertEnabled?'24px':'3px'};width:20px;height:20px;border-radius:50%;background:#fff;transition:left 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div>
+      </div>
+    </div>
+
+    <div id="alert-body-drawer" style="${printerSettings.alertEnabled?'':'opacity:0.4;pointer-events:none;'}">
+      <!-- Alert Mode -->
+      <div class="form-group">
+        <label class="form-label">Alert Mode</label>
+        <div class="seg-ctrl" style="margin-bottom:0;" id="alert-mode-ctrl">
+          <button class="seg-btn ${(printerSettings.alertMode||'voice')==='voice'?'active':''}" onclick="setAlertMode('voice')">🗣️ Voice</button>
+          <button class="seg-btn ${(printerSettings.alertMode||'voice')==='beep'?'active':''}" onclick="setAlertMode('beep')">🔔 Beep</button>
+          <button class="seg-btn ${(printerSettings.alertMode||'voice')==='both'?'active':''}" onclick="setAlertMode('both')">Both</button>
+        </div>
+      </div>
+
+      <!-- Volume -->
+      <div class="form-group">
+        <label class="form-label">Volume — <span id="alert-vol-label">${printerSettings.alertVolume??90}%</span></label>
+        <input type="range" id="alert-volume" min="10" max="100" step="5" value="${printerSettings.alertVolume??90}"
+          oninput="document.getElementById('alert-vol-label').textContent=this.value+'%'"
+          style="width:100%;accent-color:var(--accent);cursor:pointer;height:6px;"/>
+      </div>
+
+      <!-- Voice settings -->
+      <div id="voice-settings" style="${(printerSettings.alertMode||'voice')!=='beep'?'':'display:none;'}">
+        <div class="form-group">
+          <label class="form-label">Voice</label>
+          <select class="form-select" id="alert-voice-uri"><option value="">Loading…</option></select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Speed — <span id="alert-rate-label">${parseFloat(printerSettings.alertRate??0.9).toFixed(1)}x</span></label>
+            <input type="range" id="alert-rate" min="0.5" max="1.5" step="0.1" value="${printerSettings.alertRate??0.9}"
+              oninput="document.getElementById('alert-rate-label').textContent=parseFloat(this.value).toFixed(1)+'x'"
+              style="width:100%;accent-color:var(--accent);cursor:pointer;height:6px;"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Pitch — <span id="alert-pitch-label">${parseFloat(printerSettings.alertPitch??1.0).toFixed(1)}</span></label>
+            <input type="range" id="alert-pitch" min="0.5" max="2.0" step="0.1" value="${printerSettings.alertPitch??1.0}"
+              oninput="document.getElementById('alert-pitch-label').textContent=parseFloat(this.value).toFixed(1)"
+              style="width:100%;accent-color:var(--accent);cursor:pointer;height:6px;"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">⚠️ 5-Min Warning Message <span style="color:var(--text3);font-weight:400;font-size:10px;">{seat} = seat name</span></label>
+          <input class="form-input" id="alert-warning-msg" value="${(printerSettings.alertWarningMsg||'5 minutes remaining for {seat}').replace(/"/g,'&quot;')}"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">⏰ Time-Up Message</label>
+          <input class="form-input" id="alert-timeup-msg" value="${(printerSettings.alertTimeupMsg||'Time is up for {seat}').replace(/"/g,'&quot;')}"/>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <button class="btn btn-secondary" style="flex:1;" onclick="previewAlertWarning()">▶ Test Warning</button>
+          <button class="btn btn-secondary" style="flex:1;" onclick="previewAlertTimeup()">▶ Test Time-Up</button>
+        </div>
+      </div>
+
+      <!-- Beep settings -->
+      <div id="beep-settings" style="${(printerSettings.alertMode||'voice')!=='voice'?'':'display:none;'}">
+        <div class="form-group">
+          <label class="form-label">Frequency — <span id="alert-freq-label">${printerSettings.alertBeepFreq??880} Hz</span></label>
+          <input type="range" id="alert-beep-freq" min="300" max="2000" step="50" value="${printerSettings.alertBeepFreq??880}"
+            oninput="document.getElementById('alert-freq-label').textContent=this.value+' Hz'"
+            style="width:100%;accent-color:var(--accent);cursor:pointer;height:6px;"/>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">⚠️ Warning Beeps</label>
+            <input class="form-input" id="alert-beep-warn-len" type="number" min="1" max="10" value="${printerSettings.alertBeepWarningLen??3}"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">⏰ Time-Up Beeps</label>
+            <input class="form-input" id="alert-beep-timeup-len" type="number" min="1" max="10" value="${printerSettings.alertBeepTimeupLen??5}"/>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <button class="btn btn-secondary" style="flex:1;" onclick="previewAlertWarning()">▶ Test Warning</button>
+          <button class="btn btn-secondary" style="flex:1;" onclick="previewAlertTimeup()">▶ Test Time-Up</button>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary btn-full mt-8" onclick="saveAlertSettings();renderSettings();closeDrawer();">💾 Save Alert Settings</button>
+    <button class="btn btn-secondary btn-full mt-8" onclick="closeDrawer()">Close</button>
+  `);
   setTimeout(() => AlertEngine.populateVoiceList('alert-voice-uri'), 80);
 }
 function renderUserList() {
@@ -2937,8 +3015,8 @@ function toggleAlertEnabled() {
   printerSettings.alertEnabled = !printerSettings.alertEnabled;
   savePrinterSettings();
   renderSettings();
-  // Populate voices after re-render
-  setTimeout(() => AlertEngine.populateVoiceList('alert-voice-uri'), 100);
+  closeDrawer();
+  setTimeout(() => openAlertSettingsDrawer(), 200);
 }
 
 function setAlertMode(mode) {
@@ -4333,61 +4411,124 @@ function clearUsedVouchers(seatType) {
 function buildWifiSlipHTML(seatName, voucherCode, duration) {
   const w = printerSettings.paperWidth;
   const pageW = w === 58 ? '58mm' : '80mm';
-  const ssid = printerSettings.wifiSsid || 'StudyHub WiFi';
-  const note = printerSettings.wifiSlipNote || 'Valid for this session only.';
+  const ssid  = printerSettings.wifiSsid    || 'StudyHub WiFi';
+  const note  = printerSettings.wifiSlipNote|| 'Valid for this session only.';
   const shopName = printerSettings.shopName || 'STUDYHUB';
-  const fs = parseInt(printerSettings.receiptFontSize||'10');
-  const fontFamily = printerSettings.receiptFont || 'ibm';
-  const fontMap = {
-    ibm:"'IBM Plex Mono','Courier New',monospace",
-    courier:"'Courier New',Courier,monospace",
-    share:"'Share Tech Mono','Courier New',monospace",
-    inconsolata:"'Inconsolata','Courier New',monospace",
-    roboto:"'Roboto Mono','Courier New',monospace",
-  };
+  const fs = Math.max(9, parseInt(printerSettings.receiptFontSize || '11'));
+  // ── Always Roboto for WiFi slip — best readability on thermal paper ──
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>WiFi Slip</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
-  @page{size:${pageW} auto;margin:3mm 2mm;}
-  *{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:${fontMap[fontFamily]||fontMap.ibm};font-size:${fs}pt;width:${pageW};color:#000;background:#fff;line-height:1.4;}
-  .center{text-align:center;}
-  .bold{font-weight:700;}
-  .divider{border-top:1px dashed #000;margin:5px 0;}
-  .divider-solid{border-top:2px solid #000;margin:5px 0;}
-  .row{display:flex;justify-content:space-between;margin:2px 0;font-size:${fs-1}pt;}
-  .section{margin:5px 0;}
-  .wifi-icon{font-size:${fs+8}pt;margin-bottom:2px;}
-  .code-box{border:2px solid #000;border-radius:4px;padding:6px 4px;margin:6px 0;}
-  .code-val{font-size:${fs+10}pt;font-weight:700;letter-spacing:4px;}
-</style></head><body>
+  @page { size: ${pageW} auto; margin: 4mm 3mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Roboto', Arial, sans-serif;
+    font-size: ${fs}pt;
+    width: ${pageW};
+    color: #000;
+    background: #fff;
+    line-height: 1.45;
+  }
+  .center  { text-align: center; }
+  .divider { border-top: 1px dashed #999; margin: 5px 0; }
+  .divider-solid { border-top: 2px solid #000; margin: 6px 0; }
+  .section { margin: 5px 0; }
+  .shop-name {
+    font-size: ${fs + 5}pt;
+    font-weight: 900;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+  .slip-title {
+    font-size: ${fs - 1}pt;
+    font-weight: 500;
+    color: #444;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 2.5px 0;
+    font-size: ${fs - 1}pt;
+    border-bottom: 1px solid #eee;
+  }
+  .info-row:last-child { border-bottom: none; }
+  .info-label { color: #555; font-weight: 400; }
+  .info-value { font-weight: 700; text-align: right; max-width: 60%; }
+  .code-section {
+    margin: 6px 0;
+    padding: 8px 6px;
+    border: 2.5px solid #000;
+    border-radius: 5px;
+    text-align: center;
+  }
+  .code-label {
+    font-size: ${fs - 2}pt;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #444;
+    margin-bottom: 4px;
+  }
+  .code-value {
+    font-family: 'Roboto Mono', 'Courier New', monospace;
+    font-size: ${fs + 9}pt;
+    font-weight: 700;
+    letter-spacing: 5px;
+    color: #000;
+  }
+  .steps {
+    font-size: ${fs - 2}pt;
+    color: #333;
+    line-height: 1.7;
+  }
+  .steps b { font-weight: 700; color: #000; }
+  .footer-note {
+    font-size: ${fs - 2}pt;
+    color: #666;
+    font-style: italic;
+  }
+</style>
+</head><body>
+
 <div class="center section">
-  <div class="wifi-icon">📶</div>
-  <div class="bold" style="font-size:${fs+3}pt;letter-spacing:1px;">${shopName}</div>
-  <div style="font-size:${fs-1}pt;">WiFi Access Voucher</div>
+  <div class="shop-name">${shopName}</div>
+  <div class="slip-title">📶 WiFi Access Voucher</div>
 </div>
+
 <div class="divider-solid"></div>
+
 <div class="section">
-  <div class="row"><span>Seat:</span><span><b>${seatName}</b></span></div>
-  <div class="row"><span>Duration:</span><span>${duration}</span></div>
-  <div class="row"><span>Network:</span><span><b>${ssid}</b></span></div>
-  <div class="row"><span>Date:</span><span>${new Date().toLocaleDateString('en-PH')}</span></div>
+  <div class="info-row"><span class="info-label">Seat</span><span class="info-value">${seatName}</span></div>
+  <div class="info-row"><span class="info-label">Duration</span><span class="info-value">${duration}</span></div>
+  <div class="info-row"><span class="info-label">Network</span><span class="info-value">${ssid}</span></div>
+  <div class="info-row"><span class="info-label">Date</span><span class="info-value">${new Date().toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'})}</span></div>
 </div>
+
 <div class="divider"></div>
-<div class="center section">
-  <div style="font-size:${fs-1}pt;letter-spacing:1px;margin-bottom:3px;">YOUR CODE</div>
-  <div class="code-box center">
-    <div class="code-val">${voucherCode}</div>
-  </div>
+
+<div class="code-section">
+  <div class="code-label">Your WiFi Code</div>
+  <div class="code-value">${voucherCode}</div>
 </div>
+
 <div class="divider"></div>
-<div class="center section" style="font-size:${fs-2}pt;">
+
+<div class="section center steps">
   <div><b>How to connect:</b></div>
   <div>1. Connect to WiFi: <b>${ssid}</b></div>
-  <div>2. Open browser</div>
+  <div>2. Open your browser</div>
   <div>3. Enter code: <b>${voucherCode}</b></div>
 </div>
+
 <div class="divider-solid"></div>
-<div class="center section" style="font-size:${fs-2}pt;">${note}</div>
+
+<div class="center section footer-note">${note}</div>
+
 <script>window.onload=()=>{window.print();window.onafterprint=()=>window.close();}<\/script>
 </body></html>`;
 }
