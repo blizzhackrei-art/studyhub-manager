@@ -4317,7 +4317,7 @@ function buildWifiSlipHTML(seatName, voucherCode, duration) {
   const note = printerSettings.wifiSlipNote || 'Valid for this session only.';
   const shopName = printerSettings.shopName || 'STUDYHUB';
   const fs = parseInt(printerSettings.receiptFontSize||'10');
-  const fontFamily = printerSettings.receiptFont || 'ibm';
+  const fontFamily = printerSettings.receiptFont || 'roboto';
   const fontMap = {
     ibm:"'IBM Plex Mono','Courier New',monospace",
     courier:"'Courier New',Courier,monospace",
@@ -4329,7 +4329,7 @@ function buildWifiSlipHTML(seatName, voucherCode, duration) {
 <style>
   @page{size:${pageW} auto;margin:3mm 2mm;}
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:${fontMap[fontFamily]||fontMap.ibm};font-size:${fs}pt;width:${pageW};color:#000;background:#fff;line-height:1.4;}
+  body{font-family:${fontMap[fontFamily]||fontMap.roboto};font-size:${fs}pt;width:${pageW};color:#000;background:#fff;line-height:1.4;}
   .center{text-align:center;}
   .bold{font-weight:700;}
   .divider{border-top:1px dashed #000;margin:5px 0;}
